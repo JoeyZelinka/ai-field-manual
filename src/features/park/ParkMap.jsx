@@ -4,7 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { Box, Container, Stack, Typography, Chip, Button } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { motion, useReducedMotion } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 
 import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
 import PsychologyAltIcon from "@mui/icons-material/PsychologyAlt";
@@ -45,14 +50,14 @@ function tiltForId(id) {
 
 // 🎭 deterministic “from different directions” vectors (the parade entrances)
 const ENTRANCES = [
-  { x: -140, y: 0, r: -8 },      // left
-  { x: 140, y: 0, r: 8 },        // right
-  { x: 0, y: -140, r: -6 },      // top
-  { x: 0, y: 160, r: 6 },        // bottom
-  { x: -120, y: -120, r: -10 },  // top-left
-  { x: 120, y: -120, r: 10 },    // top-right
-  { x: -120, y: 120, r: 10 },    // bottom-left
-  { x: 120, y: 120, r: -10 },    // bottom-right
+  { x: -140, y: 0, r: -8 }, // left
+  { x: 140, y: 0, r: 8 }, // right
+  { x: 0, y: -140, r: -6 }, // top
+  { x: 0, y: 160, r: 6 }, // bottom
+  { x: -120, y: -120, r: -10 }, // top-left
+  { x: 120, y: -120, r: 10 }, // top-right
+  { x: -120, y: 120, r: 10 }, // bottom-left
+  { x: 120, y: 120, r: -10 }, // bottom-right
 ];
 
 export default function ParkMap() {
@@ -84,10 +89,22 @@ export default function ParkMap() {
     []
   );
 
+  // ========= Scroll “walking the midway” drift =========
+  const { scrollY } = useScroll();
+  const midwayY = useTransform(scrollY, [0, 1200], reduce ? [0, 0] : [0, -28]);
+  const midwayRot = useTransform(
+    scrollY,
+    [0, 1200],
+    reduce ? [0, 0] : [0, -0.6]
+  );
+
   // ========= Page/Hero/Section Variants =========
   const page = {
     hidden: { opacity: 0 },
-    show: { opacity: 1, transition: reduce ? { duration: 0.01 } : { duration: 0.25 } },
+    show: {
+      opacity: 1,
+      transition: reduce ? { duration: 0.01 } : { duration: 0.25 },
+    },
   };
 
   const floaty = reduce
@@ -121,15 +138,20 @@ export default function ParkMap() {
   };
 
   // ========= Tent Entrance (per-card) =========
-  // IMPORTANT: We run this per-card (initial/animate) so it works even though Grid/Container
-  // are not motion parents for staggerChildren.
   const card = {
     hidden: (c) => {
       const i = c?.i ?? 0;
       const v = ENTRANCES[i % ENTRANCES.length];
 
       if (reduce) {
-        return { opacity: 1, x: 0, y: 0, rotate: 0, scale: 1, filter: "blur(0px)" };
+        return {
+          opacity: 1,
+          x: 0,
+          y: 0,
+          rotate: 0,
+          scale: 1,
+          filter: "blur(0px)",
+        };
       }
 
       return {
@@ -145,7 +167,14 @@ export default function ParkMap() {
       const i = c?.i ?? 0;
 
       if (reduce) {
-        return { opacity: 1, x: 0, y: 0, rotate: 0, scale: 1, filter: "blur(0px)" };
+        return {
+          opacity: 1,
+          x: 0,
+          y: 0,
+          rotate: 0,
+          scale: 1,
+          filter: "blur(0px)",
+        };
       }
 
       return {
@@ -160,7 +189,6 @@ export default function ParkMap() {
           stiffness: 520,
           damping: 34,
           mass: 0.9,
-          // gentle parade stagger (capped so big lists don’t take forever)
           delay: Math.min(0.65, 0.05 * i),
         },
       };
@@ -169,7 +197,12 @@ export default function ParkMap() {
       reduce
         ? {}
         : {
-            rotate: [0, (c?.tilt ?? 0) * 0.35, -(c?.tilt ?? 0) * 0.25, 0],
+            rotate: [
+              0,
+              (c?.tilt ?? 0) * 0.35,
+              -(c?.tilt ?? 0) * 0.25,
+              0,
+            ],
             scale: 1.02,
             transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
           },
@@ -182,7 +215,10 @@ export default function ParkMap() {
     const area = getArea(m);
 
     return (
-      <TentCard cardSx={{ height: "100%" }} contentSx={{ pt: 3, px: { xs: 3, sm: 4 } }}>
+      <TentCard
+        cardSx={{ height: "100%" }}
+        contentSx={{ pt: 3, px: { xs: 3, sm: 4 } }}
+      >
         <Stack spacing={1.2} alignItems="center" textAlign="center">
           <Stack
             direction="row"
@@ -192,16 +228,29 @@ export default function ParkMap() {
             sx={{ width: "100%", px: 1, flexWrap: "wrap" }}
           >
             <Icon fontSize="small" />
-            <Typography fontWeight={900}>{m.park?.attraction || m.title}</Typography>
+            <Typography fontWeight={900}>
+              {m.park?.attraction || m.title}
+            </Typography>
 
             {showAreaChip && area ? (
-              <Chip size="small" label={area} variant="outlined" sx={{ opacity: 0.85 }} />
+              <Chip
+                size="small"
+                label={area}
+                variant="outlined"
+                sx={{ opacity: 0.85 }}
+              />
             ) : null}
 
-            {isDone ? <Chip size="small" label="✅ Done" variant="filled" /> : null}
+            {isDone ? (
+              <Chip size="small" label="✅ Done" variant="filled" />
+            ) : null}
           </Stack>
 
-          <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2, maxWidth: "92%", mx: "auto" }}>
+          <Typography
+            variant="h6"
+            fontWeight={800}
+            sx={{ lineHeight: 1.2, maxWidth: "92%", mx: "auto" }}
+          >
             {m.title}
           </Typography>
 
@@ -209,13 +258,34 @@ export default function ParkMap() {
             {m.park?.blurb}
           </Typography>
 
-          <Stack direction="row" spacing={1} justifyContent="center" sx={{ flexWrap: "wrap" }}>
-            {m.park?.time ? <Chip size="small" label={m.park.time} variant="outlined" /> : null}
-            {m.park?.level ? <Chip size="small" label={m.park.level} variant="outlined" /> : null}
+          <Stack
+            direction="row"
+            spacing={1}
+            justifyContent="center"
+            sx={{ flexWrap: "wrap" }}
+          >
+            {m.park?.time ? (
+              <Chip size="small" label={m.park.time} variant="outlined" />
+            ) : null}
+            {m.park?.level ? (
+              <Chip size="small" label={m.park.level} variant="outlined" />
+            ) : null}
           </Stack>
 
-          <Box sx={{ width: "100%", pt: 1, display: "flex", justifyContent: "center" }}>
-            <Button component={Link} href={`/workshop?start=${m.id}`} variant="contained" sx={{ width: "100%", maxWidth: 260 }}>
+          <Box
+            sx={{
+              width: "100%",
+              pt: 1,
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <Button
+              component={Link}
+              href={`/workshop?start=${m.id}`}
+              variant="contained"
+              sx={{ width: "100%", maxWidth: 260 }}
+            >
               Enter
             </Button>
           </Box>
@@ -265,10 +335,16 @@ export default function ParkMap() {
               opacity: 0.55,
               filter: "blur(32px)",
               mixBlendMode: "screen",
-              background: "radial-gradient(closest-side, rgba(250,204,21,0.16), transparent 70%)",
+              background:
+                "radial-gradient(closest-side, rgba(250,204,21,0.16), transparent 70%)",
             }}
             animate={{ x: [-80, 120, -40], y: [-60, 30, -20] }}
-            transition={{ duration: 16, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+            transition={{
+              duration: 16,
+              repeat: Infinity,
+              repeatType: "mirror",
+              ease: "easeInOut",
+            }}
           />
           <MotionBox
             aria-hidden
@@ -279,10 +355,16 @@ export default function ParkMap() {
               opacity: 0.48,
               filter: "blur(38px)",
               mixBlendMode: "screen",
-              background: "radial-gradient(closest-side, rgba(225,29,72,0.14), transparent 72%)",
+              background:
+                "radial-gradient(closest-side, rgba(225,29,72,0.14), transparent 72%)",
             }}
             animate={{ x: [140, -120, 90], y: [40, -80, 60] }}
-            transition={{ duration: 20, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              repeatType: "mirror",
+              ease: "easeInOut",
+            }}
           />
           <MotionBox
             aria-hidden
@@ -293,15 +375,24 @@ export default function ParkMap() {
               opacity: 0.28,
               filter: "blur(46px)",
               mixBlendMode: "screen",
-              background: "radial-gradient(closest-side, rgba(255,255,255,0.10), transparent 70%)",
+              background:
+                "radial-gradient(closest-side, rgba(255,255,255,0.10), transparent 70%)",
             }}
             animate={{ x: [-40, 70, -60], y: [120, 40, 90] }}
-            transition={{ duration: 22, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+            transition={{
+              duration: 22,
+              repeat: Infinity,
+              repeatType: "mirror",
+              ease: "easeInOut",
+            }}
           />
         </>
       ) : null}
 
-      <Container maxWidth="xl" sx={{ px: { xs: 2, md: 4 }, position: "relative", zIndex: 1 }}>
+      <Container
+        maxWidth="xl"
+        sx={{ px: { xs: 2, md: 4 }, position: "relative", zIndex: 1 }}
+      >
         {/* ====== HERO (UNCHANGED — kept exactly) ====== */}
         <MotionBox
           variants={heroWrap}
@@ -342,33 +433,47 @@ export default function ParkMap() {
                 backgroundSize: "28px 28px",
               }}
               style={{ backgroundPosition: "10px 10px" }}
-              animate={{ backgroundPosition: ["10px 10px", "62px 34px", "10px 10px"] }}
+              animate={{
+                backgroundPosition: ["10px 10px", "62px 34px", "10px 10px"],
+              }}
               transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
             />
           ) : null}
 
-          <Grid container spacing={2} alignItems="center" sx={{ position: "relative" }}>
+          <Grid
+            container
+            spacing={2}
+            alignItems="center"
+            sx={{ position: "relative" }}
+          >
             <Grid size={{ xs: 12, md: 8 }}>
               <MotionBox animate={floaty}>
                 <Stack spacing={1.2}>
                   <Typography
                     variant="h2"
                     fontWeight={950}
-                    sx={{ lineHeight: 1, textShadow: "0 2px 18px rgba(250,204,21,0.10)" }}
+                    sx={{
+                      lineHeight: 1,
+                      textShadow: "0 2px 18px rgba(250,204,21,0.10)",
+                    }}
                   >
                     AI Big Top
                   </Typography>
 
                   <Typography sx={{ opacity: 0.9, maxWidth: 720 }}>
-                    Step right up. Pick an act. Learn at your pace. Leave with better prompts,
-                    fewer hallucinations, and zero accidental data leaks.
+                    Step right up. Pick an act. Learn at your pace. Leave with
+                    better prompts, fewer hallucinations, and zero accidental
+                    data leaks.
                   </Typography>
                 </Stack>
               </MotionBox>
             </Grid>
 
             <Grid size={{ xs: 12, md: 4 }}>
-              <Stack spacing={1.2} alignItems={{ xs: "flex-start", md: "flex-end" }}>
+              <Stack
+                spacing={1.2}
+                alignItems={{ xs: "flex-start", md: "flex-end" }}
+              >
                 <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
                   <Chip
                     label={`Acts cleared: ${completed}/${modules.length}`}
@@ -390,9 +495,7 @@ export default function ParkMap() {
                 </Stack>
 
                 <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-                  <Button component={Link} href="/workshop" variant="contained">
-                    Ringmaster Tour
-                  </Button>
+                 
                   <Button variant="outlined" onClick={resetProgress}>
                     Reset tickets
                   </Button>
@@ -402,26 +505,43 @@ export default function ParkMap() {
           </Grid>
         </MotionBox>
 
-        <Stack spacing={5}>
+        <Stack spacing={12}>
+          {/* ↑ bumped from 5 → 6 (more vertical breathing room between sections) */}
+
           {/* ====== FRONT GATE ====== */}
           {frontGateRides.length ? (
             <MotionBox variants={section}>
-              <Typography variant="h4" fontWeight={950} sx={{ mb: 2, textAlign: "center" }}>
+              <Typography
+                variant="h4"
+                fontWeight={950}
+                sx={{ mb: 2.5, textAlign: "center" }}
+              >
                 Front Gate
               </Typography>
 
-              <Grid container spacing={3} justifyContent="center" sx={{ mx: "auto", maxWidth: 720 }}>
+              <Grid
+                container
+                spacing={8}
+                justifyContent="center"
+                sx={{ mx: "auto", maxWidth: 720 }}
+              >
+                {/* ↑ bumped spacing 3 → 4 */}
                 {frontGateRides.map((m, i) => {
                   const tilt = tiltForId(m.id);
                   const custom = { i, tilt };
 
                   return (
-                    <Grid key={m.id} size={12} sx={{ display: "flex", justifyContent: "center" }}>
+                    <Grid
+                      key={m.id}
+                      size={12}
+                      sx={{ display: "flex", justifyContent: "center" }}
+                    >
                       <MotionBox
                         variants={card}
                         custom={custom}
                         initial="hidden"
-                        animate="show"
+                        whileInView="show"
+                        viewport={{ once: true, amount: 0.35 }}
                         whileHover="hover"
                         sx={{
                           width: "100%",
@@ -443,45 +563,57 @@ export default function ParkMap() {
 
           {/* ====== THE MIDWAY ====== */}
           <MotionBox variants={section}>
-            <Typography variant="h4" fontWeight={950} sx={{ mb: 2, textAlign: "center" }}>
+            <Typography
+              variant="h4"
+              fontWeight={950}
+              sx={{ mb: 2.5, textAlign: "center" }}
+            >
               The Midway
             </Typography>
 
-            <Grid
-              container
-              justifyContent="center"
-              rowSpacing={5}
-              columnSpacing={{ xs: 2, sm: 6, md: 10, lg: 14, xl: 22 }}
-              sx={{ mx: "auto", maxWidth: { xs: 1200, xl: 1500 } }}
-            >
-              {otherRides.map((m, i) => {
-                const globalI = i + frontGateRides.length;
-                const tilt = tiltForId(m.id);
-                const custom = { i: globalI, tilt };
+            <MotionBox style={{ y: midwayY, rotate: midwayRot }}>
+              <Grid
+                container
+                justifyContent="center"
+                rowSpacing={{ xs: 8, md: 10 }}
+                columnSpacing={{ xs: 2, sm: 6, md: 10, lg: 14, xl: 22 }}
+                sx={{ mx: "auto", maxWidth: { xs: 1200, xl: 1500 } }}
+              >
+                {/* ↑ rowSpacing 5 → 8 (this is the main “more vertical space between tents”) */}
+                {otherRides.map((m, i) => {
+                  const globalI = i + frontGateRides.length;
+                  const tilt = tiltForId(m.id);
+                  const custom = { i: globalI, tilt };
 
-                return (
-                  <Grid key={m.id} size={{ xs: 12, sm: 6 }} sx={{ display: "flex", justifyContent: "center" }}>
-                    <MotionBox
-                      variants={card}
-                      custom={custom}
-                      initial="hidden"
-                      animate="show"
-                      whileHover="hover"
-                      sx={{
-                        width: "100%",
-                        maxWidth: { xs: 560, lg: 520, xl: 560 },
-                        minWidth: 0,
-                        transform: "translateZ(0)",
-                        backfaceVisibility: "hidden",
-                        willChange: "transform",
-                      }}
+                  return (
+                    <Grid
+                      key={m.id}
+                      size={{ xs: 12, sm: 6 }}
+                      sx={{ display: "flex", justifyContent: "center" }}
                     >
-                      {renderRide(m, { showAreaChip: true })}
-                    </MotionBox>
-                  </Grid>
-                );
-              })}
-            </Grid>
+                      <MotionBox
+                        variants={card}
+                        custom={custom}
+                        initial="hidden"
+                        whileInView="show"
+                        viewport={{ once: true, amount: 0.35 }}
+                        whileHover="hover"
+                        sx={{
+                          width: "100%",
+                          maxWidth: { xs: 560, lg: 520, xl: 560 },
+                          minWidth: 0,
+                          transform: "translateZ(0)",
+                          backfaceVisibility: "hidden",
+                          willChange: "transform",
+                        }}
+                      >
+                        {renderRide(m, { showAreaChip: true })}
+                      </MotionBox>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </MotionBox>
           </MotionBox>
         </Stack>
       </Container>
