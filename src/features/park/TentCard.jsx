@@ -120,7 +120,10 @@ export default function TentCard({
         sx={{
           position: "relative",
           overflow: "hidden",
-          borderRadius: 3,
+
+          // ✅ reduced from 3 (very round) → 1 (subtle)
+          // set to 0 if you want perfectly sharp corners
+          borderRadius: 1,
 
           // trapezoid walls
           clipPath: "polygon(6% 0%, 94% 0%, 100% 100%, 0% 100%)",

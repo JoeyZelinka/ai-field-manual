@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Box, Container, Stack, Typography, Chip, Button, Grid } from "@mui/material";
+import { Box, Container, Stack, Typography, Chip, Button } from "@mui/material";
+import Grid from "@mui/material/Grid";
 
 import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
 import PsychologyAltIcon from "@mui/icons-material/PsychologyAlt";
@@ -65,44 +66,67 @@ export default function ParkMap() {
 
     return (
       <TentCard
-        cardSx={{
-          height: "100%",
-        }}
-        contentSx={{ pt: 3 }}
+        cardSx={{ height: "100%" }}
+        // ✅ give the trapezoid walls “safe area”
+        contentSx={{ pt: 3, px: { xs: 3, sm: 4 } }}
       >
-        <Stack spacing={1.2}>
-          <Stack direction="row" spacing={1} alignItems="center">
+        <Stack spacing={1.2} alignItems="center" textAlign="center">
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            justifyContent="center"
+            sx={{
+              width: "100%",
+              px: 1, // ✅ keeps top row away from slanted edges
+              flexWrap: "wrap",
+            }}
+          >
             <Icon fontSize="small" />
-            <Typography fontWeight={900}>{m.park?.attraction || m.title}</Typography>
+            <Typography fontWeight={900}>
+              {m.park?.attraction || m.title}
+            </Typography>
 
             {showAreaChip && area ? (
               <Chip
                 size="small"
                 label={area}
                 variant="outlined"
-                sx={{ ml: 0.5, opacity: 0.85 }}
+                sx={{ opacity: 0.85 }}
               />
             ) : null}
 
-            <Box sx={{ flex: 1 }} />
-
-            <Chip
-              size="small"
-              label={isDone ? "✅ Done" : "🎟️ Ride"}
-              variant={isDone ? "filled" : "outlined"}
-            />
+            {isDone ? <Chip size="small" label="✅ Done" variant="filled" /> : null}
           </Stack>
 
-          {/* keeps the “top detail” without fighting TentCard's ::before/::after */}
-          <Box sx={{ borderTop: "2px dashed rgba(250,204,21,0.18)", mt: 0.5 }} />
-
-          <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+          <Typography
+            variant="h6"
+            fontWeight={800}
+            sx={{
+              lineHeight: 1.2,
+              maxWidth: "92%", // ✅ prevents long titles from hitting the walls
+              mx: "auto",
+            }}
+          >
             {m.title}
           </Typography>
 
-          <Typography sx={{ opacity: 0.85 }}>{m.park?.blurb}</Typography>
+          <Typography
+            sx={{
+              opacity: 0.85,
+              maxWidth: "92%", // ✅ same idea for blurb
+              mx: "auto",
+            }}
+          >
+            {m.park?.blurb}
+          </Typography>
 
-          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            justifyContent="center"
+            sx={{ flexWrap: "wrap" }}
+          >
             {m.park?.time ? (
               <Chip size="small" label={m.park.time} variant="outlined" />
             ) : null}
@@ -111,24 +135,23 @@ export default function ParkMap() {
             ) : null}
           </Stack>
 
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1}
-            sx={{ pt: 1 }}
+          <Box
+            sx={{
+              width: "100%",
+              pt: 1,
+              display: "flex",
+              justifyContent: "center",
+            }}
           >
-            <Button component={Link} href={`/ride/${m.id}`} variant="contained" fullWidth>
-              Enter
-            </Button>
-
             <Button
               component={Link}
               href={`/workshop?start=${m.id}`}
-              variant="outlined"
-              fullWidth
+              variant="contained"
+              sx={{ width: "100%", maxWidth: 260 }}
             >
-              Tour from here
+              Enter
             </Button>
-          </Stack>
+          </Box>
         </Stack>
       </TentCard>
     );
@@ -140,18 +163,15 @@ export default function ParkMap() {
         minHeight: "100vh",
         width: "100%",
         py: 6,
-
         backgroundColor: "rgb(18,10,12)",
         backgroundImage: `
           radial-gradient(1000px 620px at 20% -10%, rgba(250,204,21,0.18), transparent 60%),
           radial-gradient(900px 540px at 85% 10%, rgba(225,29,72,0.20), transparent 58%),
-
           repeating-linear-gradient(
             90deg,
             rgba(225,29,72,0.34) 0 56px,
             rgba(250,204,21,0.22) 56px 112px
           ),
-
           repeating-linear-gradient(
             0deg,
             rgba(255,255,255,0.025) 0 1px,
@@ -161,7 +181,6 @@ export default function ParkMap() {
         backgroundAttachment: { xs: "scroll", md: "fixed" },
       }}
     >
-      {/* ✅ give the Midway room for a real walkway */}
       <Container maxWidth="xl" sx={{ px: { xs: 2, md: 4 } }}>
         {/* HERO */}
         <Box
@@ -175,36 +194,15 @@ export default function ParkMap() {
             mx: "auto",
             border: "2px solid rgba(250,204,21,0.20)",
             boxShadow: "0 18px 55px rgba(0,0,0,0.55)",
-
             backgroundImage: `
               radial-gradient(900px 380px at 25% 15%, rgba(250,204,21,0.18), transparent 60%),
               radial-gradient(900px 380px at 80% 25%, rgba(225,29,72,0.16), transparent 55%),
               linear-gradient(135deg, rgba(18,10,12,0.92), rgba(18,10,12,0.55))
             `,
-
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              borderRadius: "inherit",
-              pointerEvents: "none",
-              backgroundImage: `
-                radial-gradient(circle,
-                  rgba(255,236,160,0.22) 0 2px,
-                  rgba(250,204,21,0.10) 3px,
-                  transparent 7px
-                )
-              `,
-              backgroundSize: "28px 28px",
-              backgroundPosition: "10px 10px",
-              opacity: 0.22,
-              mixBlendMode: "screen",
-            },
           }}
         >
           <Grid container spacing={2} alignItems="center" sx={{ position: "relative" }}>
-            {/* LEFT */}
-            <Grid item xs={12} md={8}>
+            <Grid size={{ xs: 12, md: 8 }}>
               <Stack spacing={1.2}>
                 <Typography
                   variant="h2"
@@ -221,8 +219,7 @@ export default function ParkMap() {
               </Stack>
             </Grid>
 
-            {/* RIGHT */}
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Stack spacing={1.2} alignItems={{ xs: "flex-start", md: "flex-end" }}>
                 <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
                   <Chip
@@ -267,7 +264,7 @@ export default function ParkMap() {
 
               <Grid container spacing={3} justifyContent="center" sx={{ mx: "auto", maxWidth: 720 }}>
                 {frontGateRides.map((m) => (
-                  <Grid item key={m.id} xs={12} sx={{ display: "flex", justifyContent: "center" }}>
+                  <Grid key={m.id} size={12} sx={{ display: "flex", justifyContent: "center" }}>
                     <Box sx={{ width: "100%", maxWidth: 620, minWidth: 0 }}>
                       {renderRide(m)}
                     </Box>
@@ -287,25 +284,19 @@ export default function ParkMap() {
               container
               justifyContent="center"
               rowSpacing={5}
-              // ✅ Big walkway on wide screens, safe at lg via responsive card width below
               columnSpacing={{ xs: 2, sm: 6, md: 10, lg: 14, xl: 22 }}
-              // ✅ allow the 2 tents + big gap to actually fit
               sx={{ mx: "auto", maxWidth: { xs: 1200, xl: 1500 } }}
             >
               {otherRides.map((m) => (
                 <Grid
-                  item
                   key={m.id}
-                  xs={12}
-                  sm={6}
-                  md={6}
+                  // ✅ force 2-up layout from sm and up
+                  size={{ xs: 12, sm: 6 }}
                   sx={{ display: "flex", justifyContent: "center" }}
                 >
                   <Box
                     sx={{
                       width: "100%",
-                      // ✅ this is the secret sauce: slightly slimmer at lg to afford a bigger walkway,
-                      // then back to full width at xl
                       maxWidth: { xs: 560, lg: 520, xl: 560 },
                       minWidth: 0,
                     }}

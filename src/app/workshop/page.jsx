@@ -1,5 +1,11 @@
-import Workshop from "@/features/workshop/Workshop";
+import * as React from "react";
+import { Suspense } from "react";
+import WorkshopClient from "./WorkshopClient";
 
-export default function WorkshopPage() {
-  return <Workshop />;
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <WorkshopClient />
+    </Suspense>
+  );
 }
