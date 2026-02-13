@@ -11,14 +11,25 @@ const ROOF_OVERHANG = 12;   // how far roof sticks out past the body (fixes corn
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
 
-export default function TentCard({
-  children,
-  sx,
-  cardSx,
-  contentSx,
-  ...props
-}) {
+export default function TentCard({ children, sx, cardSx, contentSx, ...props }) {
   const reduce = useReducedMotion();
+
+  // Parent just provides the "rest/hover" state machine
+  const wrapVariants = {
+    rest: {},
+    hover: {},
+  };
+
+  const roofVariants = {
+    rest: { rotate: 0 },
+    hover: reduce
+      ? { rotate: 0 }
+      : {
+          // spin fast, then come back to normal WHILE still hovered
+          rotate: [0, 1080, 0],
+          transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+        },
+  };
 
   const cardVariants = {
     rest: {
@@ -30,21 +41,28 @@ export default function TentCard({
       y: reduce ? 0 : -3,
       borderColor: "rgba(250,204,21,0.32)",
       boxShadow: "0 22px 70px rgba(0,0,0,0.42)",
+      transition: { duration: 0.16, ease: [0.22, 1, 0.36, 1] },
     },
   };
 
   return (
-    <Box
+    <MotionBox
+      inherit={false}
+      variants={wrapVariants}
+      initial="rest"
+      animate="rest"
+      whileHover="hover"
       sx={{
         position: "relative",
-        // space for roof; roof overlaps the top border a bit
         pt: `${ROOF_H - ROOF_OVERLAP}px`,
         ...sx,
       }}
       {...props}
     >
-      {/* Roof */}
-      <Box
+      {/* Roof (now motion-driven) */}
+      <MotionBox
+        inherit={false}
+        variants={roofVariants}
         sx={{
           position: "absolute",
           top: 0,
@@ -56,6 +74,9 @@ export default function TentCard({
 
           // slightly wider triangle so wide tents don't show corners
           clipPath: "polygon(50% 0%, -2% 100%, 102% 100%)",
+
+          // make spins look "centered"
+          transformOrigin: "50% 55%",
 
           border: "1px solid rgba(255,255,255,0.18)",
           backgroundImage: `
@@ -131,17 +152,11 @@ export default function TentCard({
         }}
       />
 
-      {/* Tent body (Framer Motion owns hover now) */}
+      {/* Tent body */}
       <MotionCard
+        inherit={false}
         elevation={0}
         variants={cardVariants}
-        initial="rest"
-        animate="rest"
-        whileHover="hover"
-        transition={{
-          duration: 0.16,
-          ease: [0.22, 1, 0.36, 1], // nice “snap” easing
-        }}
         style={{
           transform: "translateZ(0)",
           backfaceVisibility: "hidden",
@@ -150,15 +165,9 @@ export default function TentCard({
         sx={{
           position: "relative",
           overflow: "hidden",
-
-          // if you want sharper corners later, set to 0
           borderRadius: 1,
-
-          // trapezoid walls
           clipPath: "polygon(6% 0%, 94% 0%, 100% 100%, 0% 100%)",
-
           border: "1px solid rgba(255,255,255,0.14)",
-
           backgroundImage: `
             linear-gradient(135deg, rgba(18,10,12,0.78), rgba(225,29,72,0.10)),
             repeating-linear-gradient(
@@ -169,12 +178,11 @@ export default function TentCard({
               rgba(0,0,0,0.00) 36px
             )
           `,
-
           ...cardSx,
         }}
       >
         <CardContent sx={{ pt: 4, ...contentSx }}>{children}</CardContent>
       </MotionCard>
-    </Box>
+    </MotionBox>
   );
 }
