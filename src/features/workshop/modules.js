@@ -5,7 +5,7 @@ const modules = [
     id: "culture-purity-test",
     type: "poll",
     title: "Tool Purity Is a Trap",
-    prompt: "“If you use AI, you’re not a real ______.” How do you respond?",
+   
     options: [
       { id: "a", label: "Hard disagree. Tools are leverage." },
       { id: "b", label: "Depends. AI is fine but risky." },
