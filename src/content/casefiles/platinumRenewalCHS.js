@@ -1,3 +1,5 @@
+// src/content/casefiles/platinumRenewalCHS.js
+
 const platinumRenewalCHS = {
   id: "platinum-renewal-chs",
   language: "CHS (Simplified Chinese)",

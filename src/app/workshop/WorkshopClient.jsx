@@ -1,3 +1,5 @@
+// src/app/workshop/WorkshopClient.jsx
+
 "use client";
 
 import * as React from "react";
@@ -11,134 +13,55 @@ import {
   Chip,
   Button,
   LinearProgress,
-  Divider,
 } from "@mui/material";
 import { motion, useReducedMotion } from "framer-motion";
 
-import modules from "@/features/workshop/modules";
-import { loadState, saveState } from "@/features/workshop/storage";
+// ✅ Canonical source of truth (explicit .js)
+import modules, {
+  FRONT_GATE_ID,
+  getArea,
+  requiresFrontGate,
+} from "@/features/carnival/modules.js";
+
+// ✅ Storage (explicit .js)
+import { loadState, saveState } from "@/features/workshop/storage.js";
+
+// ✅ Canonical acts
+import ManifestoAct from "@/features/carnival/acts/ManifestoAct.jsx";
+import DunkTankAct from "@/features/carnival/acts/DunkTankAct.jsx";
+import GoldfishBowlTossAct from "@/features/carnival/acts/GoldfishBowlTossAct.jsx";
+import EmailShootingGalleryAct from "@/features/carnival/acts/EmailShootingGalleryAct.jsx";
+
+// ✅ Placeholders for pending acts
+import StubAct from "@/features/workshop/acts/StubAct.jsx";
 
 const MotionBox = motion(Box);
 
 // ✅ set this to wherever ParkMap lives
 const RETURN_HREF = "/"; // e.g. "/" or "/park"
 
-function findModuleIndex(start) {
+function findModuleIndexById(start) {
   if (!start) return -1;
   const s = String(start);
-  return modules.findIndex((m) => String(m.id) === s || String(m.slug ?? "") === s);
+  return modules.findIndex((m) => String(m.id) === s);
 }
 
-function getArea(m) {
-  return m?.park?.area || "Park";
+function isCompleteForModule(module, storedAnswer) {
+  if (!module) return false;
+  if (!storedAnswer) return false;
+
+  // Dunk tank is only “complete” once a shot exists
+  if (module.type === "dunk_tank") {
+    if (typeof storedAnswer === "object" && storedAnswer) return Boolean(storedAnswer.shot);
+    if (typeof storedAnswer === "string") return Boolean(storedAnswer);
+    return false;
+  }
+
+  // Everything else: any truthy stored value counts as complete
+  return true;
 }
 
-function getChoices(m) {
-  return (
-    m?.choices ||
-    m?.options ||
-    m?.answers ||
-    m?.responses ||
-    m?.prompt?.choices ||
-    []
-  );
-}
-
-/** ---------- Heckler Booth content (Module 1: Tool Purity) ---------- */
-const HECKLER = {
-  title: "Heckler Booth",
-  intro:
-    "A carnival heckler shouts: “If you use AI, you’re not a real ____.” Build a 3-part comeback. Principle + analogy + a closing argument that ends the debate.",
-  principle: [
-    {
-      id: "outcomes",
-      label: "Outcomes > methods",
-      text: "Real work is outcomes—clarity, correctness, impact—not the amount of manual suffering.",
-    },
-    {
-      id: "leverage",
-      label: "Tools are leverage",
-      text: "Tools are leverage. Skill is knowing what to delegate and what to own.",
-    },
-    {
-      id: "craft",
-      label: "Craft includes judgment",
-      text: "Craft is judgment: choosing the right approach, verifying results, and improving the final product.",
-    },
-  ],
-  analogy: [
-    {
-      id: "calculator",
-      label: "Calculator",
-      text: "Using a calculator doesn’t make you ‘not a real’ mathematician—it lets you focus on the problem.",
-    },
-    {
-      id: "power_tools",
-      label: "Power tools",
-      text: "A carpenter with power tools isn’t cheating—it’s faster with the same responsibility for quality.",
-    },
-    {
-      id: "ide",
-      label: "IDE / autocomplete",
-      text: "An IDE doesn’t replace thinking; it removes busywork so you can think harder about what matters.",
-    },
-  ],
-
-  // ✅ NEW: Closing Argument (snarky/punky/misfit, still workplace-safe)
-  closing: [
-    {
-      id: "ship_it",
-      label: "Ship it",
-      text: "Anyway—I'm here to ship results. Catch up or clear the lane.",
-    },
-    {
-      id: "gatekeeping",
-      label: "Gatekeeping is a hobby",
-      text: "Gatekeeping is a hobby. I’ve got deadlines.",
-    },
-    {
-      id: "receipts",
-      label: "Bring receipts",
-      text: "If it’s wrong, I’ll fix it. If it’s right, I’ll take the win. Bring receipts.",
-    },
-    {
-      id: "call_the_shot",
-      label: "I own the outcome",
-      text: "I own the outcome—tools don’t get credit, and they don’t take the blame.",
-    },
-    {
-      id: "stay_mad",
-      label: "Stay mad",
-      text: "Stay mad. I’ll stay effective.",
-    },
-    {
-      id: "standards",
-      label: "Standards > vibes",
-      text: "Standards beat vibes. I’ll use whatever meets the bar and document the rest.",
-    },
-  ],
-};
-
-function isToolPurityModule(m) {
-  const t = String(m?.title ?? "").toLowerCase();
-  // Guarded so it only hits the Front Gate “Tool Purity…” act
-  return getArea(m) === "Front Gate" && t.includes("tool purity");
-}
-
-function findById(list, id) {
-  return list.find((x) => x.id === id) || null;
-}
-
-function buildComeback({ principle, analogy, closing }) {
-  const p = findById(HECKLER.principle, principle)?.text ?? "";
-  const a = findById(HECKLER.analogy, analogy)?.text ?? "";
-  const c = findById(HECKLER.closing, closing)?.text ?? "";
-
-  // Short, punchy, confident.
-  return `${p} ${a} ${c}`.replace(/\s+/g, " ").trim();
-}
-
-export default function WorkshopPage() {
+export default function WorkshopClient() {
   const reduce = useReducedMotion();
   const router = useRouter();
   const search = useSearchParams();
@@ -146,21 +69,12 @@ export default function WorkshopPage() {
   const start = search.get("start");
   const isSingle = Boolean(start);
 
+  const [hydrated, setHydrated] = React.useState(false);
+
   const [answers, setAnswers] = React.useState({});
   const [idx, setIdx] = React.useState(0);
-
-  // Prize Tickets (persistent)
   const [tickets, setTickets] = React.useState(0);
 
-  // Classic-choice module state
-  const [selected, setSelected] = React.useState(null);
-
-  // Heckler Booth state (module-specific)
-  const [heckler, setHeckler] = React.useState({
-    principle: null,
-    analogy: null,
-    closing: null, // ✅ renamed
-  });
   const [justWonTicket, setJustWonTicket] = React.useState(false);
 
   const persist = React.useCallback((patch) => {
@@ -168,59 +82,79 @@ export default function WorkshopPage() {
     saveState({ ...existing, ...patch });
   }, []);
 
+  // ✅ Hydrate from local storage (client-only)
   React.useEffect(() => {
     const saved = loadState() || {};
     const savedAnswers = saved.answers || {};
     const savedIdx = Number.isFinite(saved.idx) ? saved.idx : 0;
 
-    // Back-compat: if tickets not present, initialize to # completed modules.
-    const initTickets =
-      Number.isFinite(saved.tickets) ? saved.tickets : Object.keys(savedAnswers).length;
+    const initTickets = Number.isFinite(saved.tickets)
+      ? saved.tickets
+      : Object.keys(savedAnswers).length;
 
     setAnswers(savedAnswers);
     setIdx(savedIdx);
     setTickets(initTickets);
+    setHydrated(true);
   }, []);
 
   const completed = Object.keys(answers).length;
+  const frontGateComplete = Boolean(answers?.[FRONT_GATE_ID]);
+
+  const frontGateIndex = React.useMemo(
+    () => modules.findIndex((m) => String(m.id) === String(FRONT_GATE_ID)),
+    []
+  );
 
   const activeIndex = React.useMemo(() => {
     if (!isSingle) return idx;
-    const i = findModuleIndex(start);
+    const i = findModuleIndexById(start);
     return i >= 0 ? i : -1;
   }, [isSingle, start, idx]);
 
+  // Invalid deep-link safety
   React.useEffect(() => {
+    if (!hydrated) return;
     if (isSingle && activeIndex < 0) router.replace(RETURN_HREF);
-  }, [isSingle, activeIndex, router]);
+  }, [hydrated, isSingle, activeIndex, router]);
 
   const activeModule = activeIndex >= 0 ? modules[activeIndex] : null;
 
+  // ✅ Front Gate enforcement — only after hydration
+  React.useEffect(() => {
+    if (!hydrated) return;
+    if (!activeModule) return;
+    if (frontGateComplete) return;
+
+    // If user is already on the Front Gate module, don’t redirect
+    if (String(activeModule.id) === String(FRONT_GATE_ID)) return;
+
+    // If this module requires Front Gate, force them to the Front Gate
+    if (requiresFrontGate(activeModule)) {
+      if (isSingle) {
+        router.replace(`/workshop?start=${FRONT_GATE_ID}`);
+      } else if (frontGateIndex >= 0 && idx !== frontGateIndex) {
+        setIdx(frontGateIndex);
+        persist({ answers, idx: frontGateIndex, tickets });
+      }
+    }
+  }, [
+    hydrated,
+    activeModule?.id,
+    frontGateComplete,
+    isSingle,
+    router,
+    frontGateIndex,
+    idx,
+    persist,
+    answers,
+    tickets,
+  ]);
+
   React.useEffect(() => {
     if (!activeModule) return;
-
     setJustWonTicket(false);
-
-    // If this is the Tool Purity module, hydrate heckler state from stored answer (if any).
-    if (isToolPurityModule(activeModule)) {
-      const a = answers?.[activeModule.id];
-      if (a && typeof a === "object") {
-        setHeckler({
-          principle: a.principle ?? null,
-          analogy: a.analogy ?? null,
-          closing: a.closing ?? null, // ✅ renamed
-        });
-      } else {
-        setHeckler({ principle: null, analogy: null, closing: null });
-      }
-      setSelected(null);
-      return;
-    }
-
-    // Otherwise, classic “single selection” module
-    setSelected(answers?.[activeModule.id] ?? null);
-    setHeckler({ principle: null, analogy: null, closing: null });
-  }, [activeModule?.id, answers]);
+  }, [activeModule?.id]);
 
   const safeReturnToMidway = React.useCallback(() => {
     if (typeof window !== "undefined" && window.history.length > 1) router.back();
@@ -232,8 +166,6 @@ export default function WorkshopPage() {
     setAnswers({});
     setIdx(0);
     setTickets(0);
-    setSelected(null);
-    setHeckler({ principle: null, analogy: null, closing: null });
     setJustWonTicket(false);
   };
 
@@ -251,52 +183,32 @@ export default function WorkshopPage() {
     [answers, tickets, idx, persist]
   );
 
-  // ---------- Classic-choice modules ----------
-  const handlePick = (choiceValue) => {
+  // ===== act handlers =====
+  const stampManifesto = () => {
     if (!activeModule) return;
-
-    setSelected(choiceValue);
-
-    const nextAnswers = { ...answers, [activeModule.id]: choiceValue };
-
-    // Single mode or tour mode: completing a module earns tickets once.
+    const nextAnswers = {
+      ...answers,
+      [activeModule.id]: { type: "manifesto", completedAt: Date.now() },
+    };
     awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
   };
 
-  // ---------- Heckler Booth module ----------
-  const handleHecklerPick = (kind, id) => {
+  const pickDunkShot = (shotId) => {
     if (!activeModule) return;
-
-    setHeckler((prev) => {
-      const next = { ...prev, [kind]: id };
-
-      const isComplete = Boolean(next.principle && next.analogy && next.closing);
-      if (!isComplete) return next;
-
-      const response = buildComeback(next);
-
-      const nextAnswers = {
-        ...answers,
-        [activeModule.id]: {
-          type: "heckler_booth",
-          principle: next.principle,
-          analogy: next.analogy,
-          closing: next.closing, // ✅ renamed
-          response,
-          completedAt: Date.now(),
-        },
-      };
-
-      // Award ticket ONLY when they complete all 3 parts (once).
-      awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
-
-      return next;
-    });
+    const nextAnswers = {
+      ...answers,
+      [activeModule.id]: { type: "dunk_tank", shot: shotId, completedAt: Date.now() },
+    };
+    awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
   };
 
-  // Tour navigation (still supported)
+  // Tour nav (won’t bypass Front Gate)
   const goNext = () => {
     const nextIdx = Math.min(modules.length - 1, idx + 1);
+    const nextModule = modules[nextIdx];
+
+    if (nextModule && requiresFrontGate(nextModule) && !frontGateComplete) return;
+
     setIdx(nextIdx);
     persist({ answers, idx: nextIdx, tickets });
   };
@@ -316,26 +228,20 @@ export default function WorkshopPage() {
     ? `${area} • Module ${activeIndex + 1} of ${modules.length}`
     : `Participant Mode • Module ${idx + 1} of ${modules.length}`;
 
-  const isHecklerBooth = isToolPurityModule(activeModule);
-
-  const prompt =
-    activeModule.prompt ??
-    activeModule.question ??
-    activeModule.park?.blurb ??
-    "";
-
-  const choices = getChoices(activeModule);
-
   const progressValue = isSingle
     ? 100
     : Math.round(((idx + 1) / Math.max(1, modules.length)) * 100);
 
-  const hecklerComplete = Boolean(heckler.principle && heckler.analogy && heckler.closing);
   const stored = answers?.[activeModule.id];
-  const comeback =
-    isHecklerBooth && stored && typeof stored === "object"
-      ? (stored.response ?? buildComeback(heckler))
-      : "";
+  const isComplete = isCompleteForModule(activeModule, stored);
+
+  // Dunk Tank value adapter (supports old “string answer” shape too)
+  const dunkValue =
+    typeof stored === "object" && stored
+      ? stored.shot ?? null
+      : typeof stored === "string"
+      ? stored
+      : null;
 
   return (
     <Box
@@ -365,80 +271,100 @@ export default function WorkshopPage() {
         <MotionBox
           initial={{ opacity: 0, y: reduce ? 0 : 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 180, damping: 18 }}
-          sx={{
-            borderRadius: 3,
-            p: { xs: 3, md: 4 },
-            overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.10)",
-            boxShadow: "0 20px 80px rgba(0,0,0,0.55)",
-            backgroundImage: "linear-gradient(135deg, rgba(18,10,12,0.88), rgba(18,10,12,0.62))",
-            position: "relative",
-          }}
+          transition={
+            reduce ? { duration: 0 } : { type: "spring", stiffness: 180, damping: 18 }
+          }
         >
-          {/* Top bar */}
-          <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={2}>
-            <Stack spacing={0.5}>
-              <Typography variant="h5" fontWeight={950}>
-                {isSingle ? area : "Guided Tour"}
-              </Typography>
-              <Typography sx={{ opacity: 0.75 }}>
-                {subtitle} • Acts cleared: {completed}/{modules.length}
-              </Typography>
-            </Stack>
+          {/* Marquee header */}
+          <Box
+            sx={{
+              borderRadius: 3,
+              p: { xs: 2, md: 2.5 },
+              border: "2px dashed rgba(255,255,255,0.22)",
+              backgroundColor: "rgba(0,0,0,0.20)",
+              boxShadow: "0 16px 60px rgba(0,0,0,0.35)",
+            }}
+          >
+            <Stack
+              direction="row"
+              alignItems="flex-start"
+              justifyContent="space-between"
+              spacing={2}
+            >
+              <Stack spacing={0.5}>
+                <Typography
+                  variant="h5"
+                  fontWeight={950}
+                  sx={{ letterSpacing: 0.5, textTransform: "uppercase" }}
+                >
+                  {isSingle ? area : "Guided Tour"}
+                </Typography>
+                <Typography sx={{ opacity: 0.78 }}>
+                  {subtitle} • Acts cleared: {completed}/{modules.length}
+                </Typography>
 
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
-              <Chip
-                label={`Prize Tickets: ${tickets}`}
-                sx={{
-                  backgroundColor: "rgba(0,0,0,0.28)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                }}
-              />
+                {!frontGateComplete ? (
+                  <Typography sx={{ opacity: 0.75, fontSize: 13, mt: 0.5 }}>
+                    Front Gate required: stamp it to unlock the Midway.
+                  </Typography>
+                ) : null}
+              </Stack>
 
-              <Button
-                onClick={resetProgress}
-                variant="outlined"
-                sx={{
-                  borderStyle: "dashed",
-                  borderColor: "rgba(225,29,72,0.65)",
-                  color: "rgba(255,255,255,0.88)",
-                }}
-              >
-                Reset
-              </Button>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
+                <Chip
+                  label={`Prize Tickets: ${tickets}`}
+                  sx={{
+                    backgroundColor: "rgba(0,0,0,0.28)",
+                    border: "1px dashed rgba(255,255,255,0.22)",
+                    color: "rgba(255,255,255,0.92)",
+                  }}
+                />
 
-              {isSingle ? (
                 <Button
-                  onClick={safeReturnToMidway}
+                  onClick={resetProgress}
                   variant="outlined"
                   sx={{
                     borderStyle: "dashed",
-                    borderColor: "rgba(250,204,21,0.55)",
+                    borderColor: "rgba(225,29,72,0.65)",
                     color: "rgba(255,255,255,0.88)",
+                    borderRadius: 999,
                   }}
                 >
-                  Back to Midway
+                  Reset
                 </Button>
-              ) : null}
-            </Stack>
-          </Stack>
 
-          {/* Progress */}
-          <Box sx={{ mt: 2 }}>
-            <LinearProgress
-              variant="determinate"
-              value={progressValue}
-              sx={{
-                height: 6,
-                borderRadius: 999,
-                backgroundColor: "rgba(255,255,255,0.08)",
-                "& .MuiLinearProgress-bar": {
-                  backgroundImage:
-                    "linear-gradient(90deg, rgba(225,29,72,0.95), rgba(250,204,21,0.95))",
-                },
-              }}
-            />
+                {isSingle ? (
+                  <Button
+                    onClick={safeReturnToMidway}
+                    variant="outlined"
+                    sx={{
+                      borderStyle: "dashed",
+                      borderColor: "rgba(250,204,21,0.55)",
+                      color: "rgba(255,255,255,0.88)",
+                      borderRadius: 999,
+                    }}
+                  >
+                    Back to Midway
+                  </Button>
+                ) : null}
+              </Stack>
+            </Stack>
+
+            <Box sx={{ mt: 2 }}>
+              <LinearProgress
+                variant="determinate"
+                value={progressValue}
+                sx={{
+                  height: 6,
+                  borderRadius: 999,
+                  backgroundColor: "rgba(255,255,255,0.08)",
+                  "& .MuiLinearProgress-bar": {
+                    backgroundImage:
+                      "linear-gradient(90deg, rgba(225,29,72,0.95), rgba(250,204,21,0.95))",
+                  },
+                }}
+              />
+            </Box>
           </Box>
 
           {/* Body */}
@@ -447,197 +373,41 @@ export default function WorkshopPage() {
               {title}
             </Typography>
 
-            {/* ---- Module-specific: Heckler Booth ---- */}
-            {isHecklerBooth ? (
-              <>
-                <Typography sx={{ opacity: 0.9, mb: 2 }}>
-                  {HECKLER.intro}
-                </Typography>
-
-                {prompt ? (
-                  <Typography sx={{ opacity: 0.85, mb: 3 }}>
-                    {prompt}
-                  </Typography>
-                ) : null}
-
-                <Divider sx={{ borderColor: "rgba(255,255,255,0.10)", mb: 3 }} />
-
-                <Stack spacing={2.5}>
-                  {/* Principle */}
-                  <Box>
-                    <Typography fontWeight={900} sx={{ mb: 1 }}>
-                      1) Pick a principle
-                    </Typography>
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-                      {HECKLER.principle.map((p) => {
-                        const on = heckler.principle === p.id;
-                        return (
-                          <Button
-                            key={p.id}
-                            onClick={() => handleHecklerPick("principle", p.id)}
-                            variant="outlined"
-                            sx={{
-                              borderRadius: 999,
-                              borderStyle: "dashed",
-                              borderWidth: 2,
-                              mb: 1,
-                              borderColor: on
-                                ? "rgba(250,204,21,0.75)"
-                                : "rgba(225,29,72,0.50)",
-                              color: on
-                                ? "rgba(250,204,21,0.95)"
-                                : "rgba(255,255,255,0.85)",
-                              backgroundColor: on ? "rgba(250,204,21,0.08)" : "transparent",
-                              "&:hover": { backgroundColor: "rgba(255,255,255,0.04)" },
-                            }}
-                          >
-                            {p.label}
-                          </Button>
-                        );
-                      })}
-                    </Stack>
-                  </Box>
-
-                  {/* Analogy */}
-                  <Box>
-                    <Typography fontWeight={900} sx={{ mb: 1 }}>
-                      2) Pick an analogy
-                    </Typography>
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-                      {HECKLER.analogy.map((a) => {
-                        const on = heckler.analogy === a.id;
-                        return (
-                          <Button
-                            key={a.id}
-                            onClick={() => handleHecklerPick("analogy", a.id)}
-                            variant="outlined"
-                            sx={{
-                              borderRadius: 999,
-                              borderStyle: "dashed",
-                              borderWidth: 2,
-                              mb: 1,
-                              borderColor: on
-                                ? "rgba(250,204,21,0.75)"
-                                : "rgba(225,29,72,0.50)",
-                              color: on
-                                ? "rgba(250,204,21,0.95)"
-                                : "rgba(255,255,255,0.85)",
-                              backgroundColor: on ? "rgba(250,204,21,0.08)" : "transparent",
-                              "&:hover": { backgroundColor: "rgba(255,255,255,0.04)" },
-                            }}
-                          >
-                            {a.label}
-                          </Button>
-                        );
-                      })}
-                    </Stack>
-                  </Box>
-
-                  {/* Closing Argument */}
-                  <Box>
-                    <Typography fontWeight={900} sx={{ mb: 1 }}>
-                      3) Closing argument
-                    </Typography>
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-                      {HECKLER.closing.map((c) => {
-                        const on = heckler.closing === c.id;
-                        return (
-                          <Button
-                            key={c.id}
-                            onClick={() => handleHecklerPick("closing", c.id)}
-                            variant="outlined"
-                            sx={{
-                              borderRadius: 999,
-                              borderStyle: "dashed",
-                              borderWidth: 2,
-                              mb: 1,
-                              borderColor: on
-                                ? "rgba(250,204,21,0.75)"
-                                : "rgba(225,29,72,0.50)",
-                              color: on
-                                ? "rgba(250,204,21,0.95)"
-                                : "rgba(255,255,255,0.85)",
-                              backgroundColor: on ? "rgba(250,204,21,0.08)" : "transparent",
-                              "&:hover": { backgroundColor: "rgba(255,255,255,0.04)" },
-                            }}
-                          >
-                            {c.label}
-                          </Button>
-                        );
-                      })}
-                    </Stack>
-                  </Box>
-
-                  {/* Generated comeback */}
-                  <Box
-                    sx={{
-                      mt: 1,
-                      p: 2.25,
-                      borderRadius: 2,
-                      border: "1px dashed rgba(255,255,255,0.20)",
-                      backgroundColor: "rgba(0,0,0,0.22)",
-                    }}
-                  >
-                    <Typography fontWeight={900} sx={{ mb: 1 }}>
-                      Your comeback
-                    </Typography>
-                    {hecklerComplete ? (
-                      <Typography sx={{ opacity: 0.92, lineHeight: 1.5 }}>
-                        “{comeback}”
-                      </Typography>
-                    ) : (
-                      <Typography sx={{ opacity: 0.65 }}>
-                        Pick one from each row to generate your response.
-                      </Typography>
-                    )}
-                  </Box>
-                </Stack>
-              </>
+            {/* ✅ Act routing by module.type (canonical) */}
+            {activeModule.type === "manifesto" ? (
+              <ManifestoAct completed={isComplete} onStamp={stampManifesto} />
+            ) : activeModule.type === "dunk_tank" ? (
+              <DunkTankAct value={dunkValue} onPick={pickDunkShot} />
+            ) : activeModule.type === "bow_toss" ? (
+              <GoldfishBowlTossAct
+                module={activeModule}
+                answer={stored && typeof stored === "object" ? stored : null}
+                onComplete={(payload) => {
+                  const nextAnswers = {
+                    ...answers,
+                    [activeModule.id]: { ...payload, completedAt: Date.now() },
+                  };
+                  awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
+                }}
+              />
+  
+  
+            ) : activeModule.type === "shooting_gallery" ? (
+              <EmailShootingGalleryAct
+      module={activeModule}
+      answer={stored && typeof stored === "object" ? stored : null}
+      onComplete={(payload) => {
+        const nextAnswers = { ...answers, [activeModule.id]: payload };
+        awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
+      }}
+    
+    />
+            ) : activeModule.type === "balloon_dart" ? (
+              <StubAct title="Balloon Dart" subtitle="Prompt Security: what’s safe vs not safe" />
+            ) : activeModule.type === "prize_counter" ? (
+              <StubAct title="Prize Counter" subtitle="Trade your tickets in for a prize" />
             ) : (
-              /* ---- Default module: classic choice list ---- */
-              <>
-                {prompt ? (
-                  <Typography sx={{ opacity: 0.9, mb: 3 }}>{prompt}</Typography>
-                ) : null}
-
-                <Stack spacing={1.25}>
-                  {choices.map((c, i) => {
-                    const label =
-                      typeof c === "string" ? c : (c.label ?? c.text ?? `Option ${i + 1}`);
-                    const value =
-                      typeof c === "string" ? c : (c.value ?? c.id ?? label);
-
-                    const isSelected = selected === value;
-
-                    return (
-                      <Button
-                        key={`${value}-${i}`}
-                        fullWidth
-                        onClick={() => handlePick(value)}
-                        variant="outlined"
-                        sx={{
-                          py: 1.6,
-                          borderRadius: 999,
-                          borderStyle: "dashed",
-                          borderWidth: 2,
-                          borderColor: isSelected
-                            ? "rgba(250,204,21,0.70)"
-                            : "rgba(225,29,72,0.55)",
-                          color: isSelected
-                            ? "rgba(250,204,21,0.95)"
-                            : "rgba(255,255,255,0.85)",
-                          backgroundColor: isSelected ? "rgba(250,204,21,0.08)" : "transparent",
-                          "&:hover": {
-                            backgroundColor: "rgba(255,255,255,0.04)",
-                          },
-                        }}
-                      >
-                        {label}
-                      </Button>
-                    );
-                  })}
-                </Stack>
-              </>
+              <StubAct title="Unknown Act" subtitle="This tent needs a renderer." />
             )}
           </Box>
 
@@ -672,23 +442,13 @@ export default function WorkshopPage() {
           {/* SINGLE MODE: completion + return CTA */}
           {isSingle ? (
             <Stack spacing={1.2} sx={{ mt: 4 }} alignItems="center">
-              {isHecklerBooth ? (
-                hecklerComplete ? (
-                  <Typography sx={{ opacity: 0.85 }}>
-                    {justWonTicket ? "Prize Ticket received." : "Ticket already stamped."} Want to hit the Midway again?
-                  </Typography>
-                ) : (
-                  <Typography sx={{ opacity: 0.6, fontSize: 13 }}>
-                    Build your comeback to complete this act.
-                  </Typography>
-                )
-              ) : selected != null ? (
+              {isComplete ? (
                 <Typography sx={{ opacity: 0.85 }}>
                   {justWonTicket ? "Prize Ticket received." : "Ticket already stamped."} Want to hit the Midway again?
                 </Typography>
               ) : (
                 <Typography sx={{ opacity: 0.6, fontSize: 13 }}>
-                  Pick an answer to complete this act.
+                  Complete the act to stamp your ticket.
                 </Typography>
               )}
 

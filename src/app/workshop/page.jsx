@@ -1,11 +1,6 @@
-import * as React from "react";
-import { Suspense } from "react";
+// src/app/workshop/page.jsx
 import WorkshopClient from "./WorkshopClient";
 
 export default function Page() {
-  return (
-    <Suspense fallback={null}>
-      <WorkshopClient />
-    </Suspense>
-  );
+  return <WorkshopClient />;
 }
