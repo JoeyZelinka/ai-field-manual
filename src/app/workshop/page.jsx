@@ -1,5 +1,6 @@
-import Workshop from "@/features/workshop/Workshop";
+// src/app/workshop/page.jsx
+import WorkshopClient from "./WorkshopClient";
 
-export default function WorkshopPage() {
-  return <Workshop />;
+export default function Page() {
+  return <WorkshopClient />;
 }

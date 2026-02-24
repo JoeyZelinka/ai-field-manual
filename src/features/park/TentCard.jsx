@@ -2,30 +2,67 @@
 
 import * as React from "react";
 import { Box, Card, CardContent } from "@mui/material";
+import { motion, useReducedMotion } from "framer-motion";
 
 const ROOF_H = 64;          // roof height
 const ROOF_OVERLAP = 12;    // how much the roof covers the body (border only)
 const ROOF_OVERHANG = 12;   // how far roof sticks out past the body (fixes corner peek)
 
-export default function TentCard({
-  children,
-  sx,
-  cardSx,
-  contentSx,
-  ...props
-}) {
+const MotionBox = motion(Box);
+const MotionCard = motion(Card);
+
+export default function TentCard({ children, sx, cardSx, contentSx, ...props }) {
+  const reduce = useReducedMotion();
+
+  // Parent just provides the "rest/hover" state machine
+  const wrapVariants = {
+    rest: {},
+    hover: {},
+  };
+
+  const roofVariants = {
+    rest: { rotate: 0 },
+    hover: reduce
+      ? { rotate: 0 }
+      : {
+          // spin fast, then come back to normal WHILE still hovered
+          rotate: [0, 1080, 0],
+          transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+        },
+  };
+
+  const cardVariants = {
+    rest: {
+      y: 0,
+      borderColor: "rgba(255,255,255,0.14)",
+      boxShadow: "0 18px 60px rgba(0,0,0,0.35)",
+    },
+    hover: {
+      y: reduce ? 0 : -3,
+      borderColor: "rgba(250,204,21,0.32)",
+      boxShadow: "0 22px 70px rgba(0,0,0,0.42)",
+      transition: { duration: 0.16, ease: [0.22, 1, 0.36, 1] },
+    },
+  };
+
   return (
-    <Box
+    <MotionBox
+      inherit={false}
+      variants={wrapVariants}
+      initial="rest"
+      animate="rest"
+      whileHover="hover"
       sx={{
         position: "relative",
-        // space for roof; roof overlaps the top border a bit
         pt: `${ROOF_H - ROOF_OVERLAP}px`,
         ...sx,
       }}
       {...props}
     >
-      {/* Roof */}
-      <Box
+      {/* Roof (now motion-driven) */}
+      <MotionBox
+        inherit={false}
+        variants={roofVariants}
         sx={{
           position: "absolute",
           top: 0,
@@ -37,6 +74,9 @@ export default function TentCard({
 
           // slightly wider triangle so wide tents don't show corners
           clipPath: "polygon(50% 0%, -2% 100%, 102% 100%)",
+
+          // make spins look "centered"
+          transformOrigin: "50% 55%",
 
           border: "1px solid rgba(255,255,255,0.18)",
           backgroundImage: `
@@ -51,7 +91,6 @@ export default function TentCard({
           `,
           filter: "drop-shadow(0 18px 50px rgba(0,0,0,0.35))",
 
-          // ✅ flat “eave” strip at the bottom to cover any top-edge peek
           "&::before": {
             content: '""',
             position: "absolute",
@@ -72,7 +111,6 @@ export default function TentCard({
             opacity: 0.95,
           },
 
-          // little marquee “cap” line
           "&::after": {
             content: '""',
             position: "absolute",
@@ -115,16 +153,20 @@ export default function TentCard({
       />
 
       {/* Tent body */}
-      <Card
+      <MotionCard
+        inherit={false}
         elevation={0}
+        variants={cardVariants}
+        style={{
+          transform: "translateZ(0)",
+          backfaceVisibility: "hidden",
+          willChange: "transform",
+        }}
         sx={{
           position: "relative",
           overflow: "hidden",
-          borderRadius: 3,
-
-          // trapezoid walls
+          borderRadius: 1,
           clipPath: "polygon(6% 0%, 94% 0%, 100% 100%, 0% 100%)",
-
           border: "1px solid rgba(255,255,255,0.14)",
           backgroundImage: `
             linear-gradient(135deg, rgba(18,10,12,0.78), rgba(225,29,72,0.10)),
@@ -136,20 +178,11 @@ export default function TentCard({
               rgba(0,0,0,0.00) 36px
             )
           `,
-          boxShadow: "0 18px 60px rgba(0,0,0,0.35)",
-
-          transition: "transform 140ms ease, border-color 140ms ease",
-          "&:hover": {
-            transform: "translateY(-3px)",
-            borderColor: "rgba(250,204,21,0.32)",
-          },
-
           ...cardSx,
         }}
       >
-        {/* ✅ extra top padding so roof overlap never eats your first row */}
         <CardContent sx={{ pt: 4, ...contentSx }}>{children}</CardContent>
-      </Card>
-    </Box>
+      </MotionCard>
+    </MotionBox>
   );
 }
