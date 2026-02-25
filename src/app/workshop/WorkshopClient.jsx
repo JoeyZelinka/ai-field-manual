@@ -32,6 +32,9 @@ import DunkTankAct from "@/features/carnival/acts/DunkTankAct.jsx";
 import GoldfishBowlTossAct from "@/features/carnival/acts/GoldfishBowlTossAct.jsx";
 import EmailShootingGalleryAct from "@/features/carnival/acts/EmailShootingGalleryAct.jsx";
 
+// ✅ NEW: Balloon Dart act
+import BalloonDartAct from "@/features/carnival/acts/BalloonDartAct.jsx";
+
 // ✅ Placeholders for pending acts
 import StubAct from "@/features/workshop/acts/StubAct.jsx";
 
@@ -390,20 +393,25 @@ export default function WorkshopClient() {
                   awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
                 }}
               />
-  
-  
             ) : activeModule.type === "shooting_gallery" ? (
               <EmailShootingGalleryAct
-      module={activeModule}
-      answer={stored && typeof stored === "object" ? stored : null}
-      onComplete={(payload) => {
-        const nextAnswers = { ...answers, [activeModule.id]: payload };
-        awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
-      }}
-    
-    />
+                module={activeModule}
+                answer={stored && typeof stored === "object" ? stored : null}
+                onComplete={(payload) => {
+                  const nextAnswers = { ...answers, [activeModule.id]: payload };
+                  awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
+                }}
+              />
             ) : activeModule.type === "balloon_dart" ? (
-              <StubAct title="Balloon Dart" subtitle="Prompt Security: what’s safe vs not safe" />
+              // ✅ NEW: real Balloon Dart renderer
+              <BalloonDartAct
+    module={activeModule}
+    answer={stored && typeof stored === "object" ? stored : null}
+    onComplete={(payload) => {
+      const nextAnswers = { ...answers, [activeModule.id]: payload };
+      awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
+    }}
+  />
             ) : activeModule.type === "prize_counter" ? (
               <StubAct title="Prize Counter" subtitle="Trade your tickets in for a prize" />
             ) : (
