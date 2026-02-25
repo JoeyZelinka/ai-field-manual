@@ -1,3 +1,5 @@
+// src/features/park/ParkMap.jsx
+
 "use client";
 
 import * as React from "react";
@@ -533,7 +535,7 @@ export default function ParkMap() {
                 <MotionBox animate={floaty}>
                   <Stack spacing={1.2}>
                     <Typography variant="h2" fontWeight={950} sx={{ lineHeight: 1 }}>
-                      AI Big Top
+                      Grant & Henderson's Misfit Circus and Carnival
                     </Typography>
                     <Typography sx={{ opacity: 0.9, maxWidth: 720 }}>
                       Step right up. Pick an act. Learn at your pace. Leave with better prompts,

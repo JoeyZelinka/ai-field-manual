@@ -31,8 +31,10 @@ import ManifestoAct from "@/features/carnival/acts/ManifestoAct.jsx";
 import DunkTankAct from "@/features/carnival/acts/DunkTankAct.jsx";
 import GoldfishBowlTossAct from "@/features/carnival/acts/GoldfishBowlTossAct.jsx";
 import EmailShootingGalleryAct from "@/features/carnival/acts/EmailShootingGalleryAct.jsx";
+import BalloonDartAct from "@/features/carnival/acts/BalloonDartAct.jsx";
+import PrizeCounterAct from "@/features/carnival/acts/PrizeCounterAct.jsx";
 
-// ✅ Placeholders for pending acts
+// ✅ Placeholders for pending/unknown acts
 import StubAct from "@/features/workshop/acts/StubAct.jsx";
 
 const MotionBox = motion(Box);
@@ -48,11 +50,16 @@ function findModuleIndexById(start) {
 
 function isCompleteForModule(module, storedAnswer) {
   if (!module) return false;
+
+  // Prize Counter is not a “stamp” act; treat as complete for UX
+  if (module.type === "prize_counter") return true;
+
   if (!storedAnswer) return false;
 
   // Dunk tank is only “complete” once a shot exists
   if (module.type === "dunk_tank") {
-    if (typeof storedAnswer === "object" && storedAnswer) return Boolean(storedAnswer.shot);
+    if (typeof storedAnswer === "object" && storedAnswer)
+      return Boolean(storedAnswer.shot);
     if (typeof storedAnswer === "string") return Boolean(storedAnswer);
     return false;
   }
@@ -161,13 +168,20 @@ export default function WorkshopClient() {
     else router.replace(RETURN_HREF);
   }, [router]);
 
-  const resetProgress = () => {
+  // ✅ Reset should be stable for Leave callback deps
+  const resetProgress = React.useCallback(() => {
     saveState({ answers: {}, idx: 0, tickets: 0 });
     setAnswers({});
     setIdx(0);
     setTickets(0);
     setJustWonTicket(false);
-  };
+  }, []);
+
+  // ✅ Leave = reset + remove ?start=... + go to the beginning (guided tour)
+  const leaveAndReset = React.useCallback(() => {
+    resetProgress();
+    router.replace("/workshop");
+  }, [resetProgress, router]);
 
   const awardTicketIfFirstCompletion = React.useCallback(
     (moduleId, nextAnswers) => {
@@ -181,6 +195,17 @@ export default function WorkshopClient() {
       if (!alreadyCompleted) setJustWonTicket(true);
     },
     [answers, tickets, idx, persist]
+  );
+
+  // ✅ Persist an answer without awarding tickets (Prize Counter, etc.)
+  const saveAnswerNoTicket = React.useCallback(
+    (moduleId, payload) => {
+      const nextAnswers = { ...answers, [moduleId]: payload };
+      setAnswers(nextAnswers);
+      setJustWonTicket(false);
+      persist({ answers: nextAnswers, idx, tickets });
+    },
+    [answers, idx, tickets, persist]
   );
 
   // ===== act handlers =====
@@ -197,7 +222,11 @@ export default function WorkshopClient() {
     if (!activeModule) return;
     const nextAnswers = {
       ...answers,
-      [activeModule.id]: { type: "dunk_tank", shot: shotId, completedAt: Date.now() },
+      [activeModule.id]: {
+        type: "dunk_tank",
+        shot: shotId,
+        completedAt: Date.now(),
+      },
     };
     awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
   };
@@ -220,6 +249,8 @@ export default function WorkshopClient() {
   };
 
   if (!activeModule) return null;
+
+  const isPrizeWall = Boolean(isSingle && activeModule?.type === "prize_counter");
 
   const area = getArea(activeModule);
   const title = activeModule.title ?? "Module";
@@ -334,18 +365,33 @@ export default function WorkshopClient() {
                 </Button>
 
                 {isSingle ? (
-                  <Button
-                    onClick={safeReturnToMidway}
-                    variant="outlined"
-                    sx={{
-                      borderStyle: "dashed",
-                      borderColor: "rgba(250,204,21,0.55)",
-                      color: "rgba(255,255,255,0.88)",
-                      borderRadius: 999,
-                    }}
-                  >
-                    Back to Midway
-                  </Button>
+                  isPrizeWall ? (
+                    <Button
+                      onClick={leaveAndReset}
+                      variant="outlined"
+                      sx={{
+                        borderStyle: "dashed",
+                        borderColor: "rgba(225,29,72,0.65)",
+                        color: "rgba(255,255,255,0.88)",
+                        borderRadius: 999,
+                      }}
+                    >
+                      Leave
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={safeReturnToMidway}
+                      variant="outlined"
+                      sx={{
+                        borderStyle: "dashed",
+                        borderColor: "rgba(250,204,21,0.55)",
+                        color: "rgba(255,255,255,0.88)",
+                        borderRadius: 999,
+                      }}
+                    >
+                      Back to Midway
+                    </Button>
+                  )
                 ) : null}
               </Stack>
             </Stack>
@@ -390,22 +436,31 @@ export default function WorkshopClient() {
                   awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
                 }}
               />
-  
-  
             ) : activeModule.type === "shooting_gallery" ? (
               <EmailShootingGalleryAct
-      module={activeModule}
-      answer={stored && typeof stored === "object" ? stored : null}
-      onComplete={(payload) => {
-        const nextAnswers = { ...answers, [activeModule.id]: payload };
-        awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
-      }}
-    
-    />
+                module={activeModule}
+                answer={stored && typeof stored === "object" ? stored : null}
+                onComplete={(payload) => {
+                  const nextAnswers = { ...answers, [activeModule.id]: payload };
+                  awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
+                }}
+              />
             ) : activeModule.type === "balloon_dart" ? (
-              <StubAct title="Balloon Dart" subtitle="Prompt Security: what’s safe vs not safe" />
+              <BalloonDartAct
+                module={activeModule}
+                answer={stored && typeof stored === "object" ? stored : null}
+                onComplete={(payload) => {
+                  const nextAnswers = { ...answers, [activeModule.id]: payload };
+                  awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
+                }}
+              />
             ) : activeModule.type === "prize_counter" ? (
-              <StubAct title="Prize Counter" subtitle="Trade your tickets in for a prize" />
+              <PrizeCounterAct
+                module={activeModule}
+                answer={stored && typeof stored === "object" ? stored : null}
+                ticketsEarned={tickets}
+                onSave={(payload) => saveAnswerNoTicket(activeModule.id, payload)}
+              />
             ) : (
               <StubAct title="Unknown Act" subtitle="This tent needs a renderer." />
             )}
@@ -442,9 +497,14 @@ export default function WorkshopClient() {
           {/* SINGLE MODE: completion + return CTA */}
           {isSingle ? (
             <Stack spacing={1.2} sx={{ mt: 4 }} alignItems="center">
-              {isComplete ? (
+              {activeModule.type === "prize_counter" ? (
                 <Typography sx={{ opacity: 0.85 }}>
-                  {justWonTicket ? "Prize Ticket received." : "Ticket already stamped."} Want to hit the Midway again?
+                  Cash ’em in whenever you want — hit Leave to reset and start over.
+                </Typography>
+              ) : isComplete ? (
+                <Typography sx={{ opacity: 0.85 }}>
+                  {justWonTicket ? "Prize Ticket received." : "Ticket already stamped."} Want to hit
+                  the Midway again?
                 </Typography>
               ) : (
                 <Typography sx={{ opacity: 0.6, fontSize: 13 }}>
@@ -453,7 +513,7 @@ export default function WorkshopClient() {
               )}
 
               <Button
-                onClick={safeReturnToMidway}
+                onClick={isPrizeWall ? leaveAndReset : safeReturnToMidway}
                 variant="contained"
                 sx={{
                   borderRadius: 999,
@@ -463,14 +523,14 @@ export default function WorkshopClient() {
                     "linear-gradient(90deg, rgba(225,29,72,0.95), rgba(250,204,21,0.95))",
                 }}
               >
-                Back to Midway
+                {isPrizeWall ? "Leave" : "Back to Midway"}
               </Button>
             </Stack>
           ) : null}
         </MotionBox>
 
-        {/* Optional fallback link */}
-        {isSingle ? (
+        {/* Optional fallback link (hide on Prize Wall) */}
+        {isSingle && !isPrizeWall ? (
           <Box sx={{ mt: 2, textAlign: "center" }}>
             <Button component={Link} href={RETURN_HREF} sx={{ opacity: 0.75 }}>
               Return to Midway
