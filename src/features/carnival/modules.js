@@ -69,7 +69,20 @@ const modules = [
       blurb: "Pop risky inputs. Keep secrets out. Learn the rules without the lecture.",
       time: "4–6 min",
       level: "Security",
+    }
     },
+    {
+    id: "funhouse_prompt_engineering",
+    type: "funhouse",
+    title: "Mirror Maze of Truth (Prompt Engineering)",
+    park: {
+      area: "The Midway",
+      attraction: "The Funhouse",
+      icon: "brain",
+      blurb: "Learn prompt guardrails that keep models honest and reduce hallucinations.",
+      time: "8–10 min",
+      level: "Intermediate",
+    }
   },
 
   // ===== EXIT =====

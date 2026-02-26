@@ -7,7 +7,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 const MotionBox = motion(Box);
 
-const BOOTH_IMG_SRC = "/goldfish_bowl.png"; // ✅ in /public
+const BOOTH_IMG_SRC = "/goldfish_bowl_wide.png"; // ✅ in /public
 const BOOTH_ASPECT = "1365 / 2048"; // matches your image
 const TARGET = { xPct: 0.52, yPct: 0.41 }; // landing spot (tweak if desired)
 
@@ -319,8 +319,11 @@ export default function GoldfishBowlTossAct({ module, answer, onComplete }) {
     const pct = Math.round((Number(answer.score || 0) / Math.max(1, Number(answer.maxScore || 1))) * 100);
     return (
       <Stack spacing={2.2}>
-        <Typography variant="h4">{module?.title ?? "Goldfish Bowl Toss"}</Typography>
-        <Typography sx={{ opacity: 0.9 }}>✅ Goldfish secured.</Typography>
+        <Typography sx={{ opacity: 0.85, maxWidth: 900 }}>
+  {module?.park?.blurb ?? "Prompts: Bad → Better → Great. Upgrade prompts step-by-step and win reliable output."}
+</Typography>
+
+<Typography sx={{ opacity: 0.9 }}>✅ Goldfish secured.</Typography>
 
         <Paper
           sx={{
@@ -508,11 +511,10 @@ export default function GoldfishBowlTossAct({ module, answer, onComplete }) {
       </AnimatePresence>
 
       <Stack spacing={0.5}>
-        <Typography variant="h4">{module?.title ?? "Goldfish Bowl Toss"}</Typography>
-        <Typography sx={{ opacity: 0.85 }}>
-          {module?.park?.blurb ?? "Prompts: Bad → Better → Great. Upgrade prompts step-by-step and win reliable output."}
-        </Typography>
-      </Stack>
+  <Typography sx={{ opacity: 0.85, maxWidth: 900 }}>
+    {module?.park?.blurb ?? "Prompts: Bad → Better → Great. Upgrade prompts step-by-step and win reliable output."}
+  </Typography>
+</Stack>
 
       {/* Progress + Score */}
       <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} alignItems="center">
@@ -530,16 +532,14 @@ export default function GoldfishBowlTossAct({ module, answer, onComplete }) {
         />
       </Stack>
 
-      {/* Booth Image + Toss Target */}
+      {/* Booth Image + Toss Target (unconfined) */}
       <MotionBox
         animate={boothShakeAnim}
         transition={reduce ? { duration: 0 } : { duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         sx={{
-          borderRadius: 3,
-          overflow: "hidden",
-          border: "2px dashed rgba(255,255,255,0.22)",
-          backgroundColor: "rgba(0,0,0,0.20)",
-          boxShadow: "0 16px 60px rgba(0,0,0,0.35)",
+          width: "100%",
+          mx: "auto",
+          position: "relative",
         }}
       >
         <Box
@@ -547,20 +547,27 @@ export default function GoldfishBowlTossAct({ module, answer, onComplete }) {
           sx={{
             position: "relative",
             width: "100%",
-            aspectRatio: BOOTH_ASPECT,
-            maxWidth: 720,
-            mx: "auto",
-            backgroundColor: "rgba(0,0,0,0.18)",
           }}
         >
-          <Image
-            src={BOOTH_IMG_SRC}
-            alt="Goldfish Bowl Toss"
-            fill
-            priority
-            sizes="(max-width: 700px) 92vw, 720px"
-            style={{ objectFit: "contain" }}
-          />
+          <MotionBox
+            key={BOOTH_IMG_SRC}
+            initial={{ opacity: 0, scale: reduce ? 1 : 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={reduce ? { duration: 0 } : { duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            sx={{ width: "100%" }}
+          >
+            <Box
+              component="img"
+              src={BOOTH_IMG_SRC}
+              alt="Goldfish Bowl Toss"
+              loading="eager"
+              style={{
+                width: "100%",
+                height: "auto",
+                display: "block",
+              }}
+            />
+          </MotionBox>
 
           {!reduce ? (
             <MotionBox
