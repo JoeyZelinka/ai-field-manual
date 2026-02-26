@@ -32,6 +32,7 @@ import GoldfishBowlTossAct from "@/features/carnival/acts/GoldfishBowlTossAct.js
 import EmailShootingGalleryAct from "@/features/carnival/acts/EmailShootingGalleryAct.jsx";
 import BalloonDartAct from "@/features/carnival/acts/BalloonDartAct.jsx";
 import PrizeCounterAct from "@/features/carnival/acts/PrizeCounterAct.jsx";
+import FunhouseAct from "@/features/carnival/acts/FunhouseAct.jsx";
 
 // ✅ Placeholders for pending/unknown acts
 import StubAct from "@/features/workshop/acts/StubAct.jsx";
@@ -174,7 +175,8 @@ export default function WorkshopClient() {
 
   // ✅ Back to Midway (keep state)
   const backToMidway = React.useCallback(() => {
-    if (typeof window !== "undefined" && window.history.length > 1) router.back();
+    if (typeof window !== "undefined" && window.history.length > 1)
+      router.back();
     else router.replace(MIDWAY_HREF);
   }, [router]);
 
@@ -237,7 +239,8 @@ export default function WorkshopClient() {
     const nextIdx = Math.min(modules.length - 1, idx + 1);
     const nextModule = modules[nextIdx];
 
-    if (nextModule && requiresFrontGate(nextModule) && !frontGateComplete) return;
+    if (nextModule && requiresFrontGate(nextModule) && !frontGateComplete)
+      return;
 
     setIdx(nextIdx);
     persist({ answers, idx: nextIdx, tickets });
@@ -304,7 +307,9 @@ export default function WorkshopClient() {
           initial={{ opacity: 0, y: reduce ? 0 : 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={
-            reduce ? { duration: 0 } : { type: "spring", stiffness: 180, damping: 18 }
+            reduce
+              ? { duration: 0 }
+              : { type: "spring", stiffness: 180, damping: 18 }
           }
         >
           {/* Marquee header */}
@@ -342,7 +347,12 @@ export default function WorkshopClient() {
                 ) : null}
               </Stack>
 
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ flexWrap: "wrap" }}
+              >
                 <Chip
                   label={`Prize Tickets: ${tickets}`}
                   sx={{
@@ -352,18 +362,7 @@ export default function WorkshopClient() {
                   }}
                 />
 
-                <Button
-                  onClick={resetProgress}
-                  variant="outlined"
-                  sx={{
-                    borderStyle: "dashed",
-                    borderColor: "rgba(225,29,72,0.65)",
-                    color: "rgba(255,255,255,0.88)",
-                    borderRadius: 999,
-                  }}
-                >
-                  Reset
-                </Button>
+              
 
                 {/* ✅ Hide header back button on Prize Counter to prevent duplicates */}
                 {isSingle && !isPrizeCounter ? (
@@ -428,7 +427,10 @@ export default function WorkshopClient() {
                 module={activeModule}
                 answer={stored && typeof stored === "object" ? stored : null}
                 onComplete={(payload) => {
-                  const nextAnswers = { ...answers, [activeModule.id]: payload };
+                  const nextAnswers = {
+                    ...answers,
+                    [activeModule.id]: payload,
+                  };
                   awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
                 }}
               />
@@ -437,7 +439,22 @@ export default function WorkshopClient() {
                 module={activeModule}
                 answer={stored && typeof stored === "object" ? stored : null}
                 onComplete={(payload) => {
-                  const nextAnswers = { ...answers, [activeModule.id]: payload };
+                  const nextAnswers = {
+                    ...answers,
+                    [activeModule.id]: payload,
+                  };
+                  awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
+                }}
+              />
+            ) : activeModule.type === "funhouse" ? (
+              <FunhouseAct
+                module={activeModule}
+                answer={stored && typeof stored === "object" ? stored : null}
+                onComplete={(payload) => {
+                  const nextAnswers = {
+                    ...answers,
+                    [activeModule.id]: payload,
+                  };
                   awardTicketIfFirstCompletion(activeModule.id, nextAnswers);
                 }}
               />
@@ -446,18 +463,27 @@ export default function WorkshopClient() {
                 module={activeModule}
                 answer={stored && typeof stored === "object" ? stored : null}
                 ticketsEarned={tickets}
-                onSave={(payload) => saveAnswerNoTicket(activeModule.id, payload)}
-                onBackToMidway={backToMidway}   // ✅ keep state
-                onLeave={leaveToMidway}         // ✅ reset + go to Midway
+                onSave={(payload) =>
+                  saveAnswerNoTicket(activeModule.id, payload)
+                }
+                onBackToMidway={backToMidway} // ✅ keep state
+                onLeave={leaveToMidway} // ✅ reset + go to Midway
               />
             ) : (
-              <StubAct title="Unknown Act" subtitle="This tent needs a renderer." />
+              <StubAct
+                title="Unknown Act"
+                subtitle="This tent needs a renderer."
+              />
             )}
           </Box>
 
           {/* TOUR MODE ONLY */}
           {!isSingle ? (
-            <Stack direction="row" justifyContent="space-between" sx={{ mt: 4 }}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              sx={{ mt: 4 }}
+            >
               <Button
                 onClick={goBack}
                 disabled={idx === 0}
@@ -488,8 +514,10 @@ export default function WorkshopClient() {
             <Stack spacing={1.2} sx={{ mt: 4 }} alignItems="center">
               {isComplete ? (
                 <Typography sx={{ opacity: 0.85 }}>
-                  {justWonTicket ? "Prize Ticket received." : "Ticket already stamped."} Want to hit
-                  the Midway again?
+                  {justWonTicket
+                    ? "Prize Ticket received."
+                    : "Ticket already stamped."}{" "}
+                  Want to hit the Midway again?
                 </Typography>
               ) : (
                 <Typography sx={{ opacity: 0.6, fontSize: 13 }}>
