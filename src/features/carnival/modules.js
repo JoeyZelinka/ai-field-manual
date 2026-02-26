@@ -94,7 +94,7 @@ const modules = [
       area: "Exit",
       attraction: "Trade Tickets for Prizes",
       icon: "gift",
-      blurb: "Cash in your Prize Tickets. (We’ll wire real prizes later.)",
+      blurb: "Cash in your Prize Tickets.",
       time: "1–2 min",
       level: "Fun",
     },
