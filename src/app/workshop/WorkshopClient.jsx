@@ -3,7 +3,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
@@ -41,6 +40,7 @@ const MotionBox = motion(Box);
 
 // ✅ set this to wherever ParkMap lives
 const RETURN_HREF = "/"; // e.g. "/" or "/park"
+const MIDWAY_HREF = `${RETURN_HREF}#midway`;
 
 function findModuleIndexById(start) {
   if (!start) return -1;
@@ -163,11 +163,6 @@ export default function WorkshopClient() {
     setJustWonTicket(false);
   }, [activeModule?.id]);
 
-  const safeReturnToMidway = React.useCallback(() => {
-    if (typeof window !== "undefined" && window.history.length > 1) router.back();
-    else router.replace(RETURN_HREF);
-  }, [router]);
-
   // ✅ Reset should be stable for Leave callback deps
   const resetProgress = React.useCallback(() => {
     saveState({ answers: {}, idx: 0, tickets: 0 });
@@ -177,10 +172,16 @@ export default function WorkshopClient() {
     setJustWonTicket(false);
   }, []);
 
-  // ✅ Leave = reset + remove ?start=... + go to the beginning (guided tour)
-  const leaveAndReset = React.useCallback(() => {
+  // ✅ Back to Midway (keep state)
+  const backToMidway = React.useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) router.back();
+    else router.replace(MIDWAY_HREF);
+  }, [router]);
+
+  // ✅ Leave (reset + go to Midway)
+  const leaveToMidway = React.useCallback(() => {
     resetProgress();
-    router.replace("/workshop");
+    router.replace(MIDWAY_HREF);
   }, [resetProgress, router]);
 
   const awardTicketIfFirstCompletion = React.useCallback(
@@ -250,8 +251,6 @@ export default function WorkshopClient() {
 
   if (!activeModule) return null;
 
-  const isPrizeWall = Boolean(isSingle && activeModule?.type === "prize_counter");
-
   const area = getArea(activeModule);
   const title = activeModule.title ?? "Module";
 
@@ -265,6 +264,8 @@ export default function WorkshopClient() {
 
   const stored = answers?.[activeModule.id];
   const isComplete = isCompleteForModule(activeModule, stored);
+
+  const isPrizeCounter = activeModule.type === "prize_counter";
 
   // Dunk Tank value adapter (supports old “string answer” shape too)
   const dunkValue =
@@ -364,34 +365,20 @@ export default function WorkshopClient() {
                   Reset
                 </Button>
 
-                {isSingle ? (
-                  isPrizeWall ? (
-                    <Button
-                      onClick={leaveAndReset}
-                      variant="outlined"
-                      sx={{
-                        borderStyle: "dashed",
-                        borderColor: "rgba(225,29,72,0.65)",
-                        color: "rgba(255,255,255,0.88)",
-                        borderRadius: 999,
-                      }}
-                    >
-                      Leave
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={safeReturnToMidway}
-                      variant="outlined"
-                      sx={{
-                        borderStyle: "dashed",
-                        borderColor: "rgba(250,204,21,0.55)",
-                        color: "rgba(255,255,255,0.88)",
-                        borderRadius: 999,
-                      }}
-                    >
-                      Back to Midway
-                    </Button>
-                  )
+                {/* ✅ Hide header back button on Prize Counter to prevent duplicates */}
+                {isSingle && !isPrizeCounter ? (
+                  <Button
+                    onClick={backToMidway}
+                    variant="outlined"
+                    sx={{
+                      borderStyle: "dashed",
+                      borderColor: "rgba(250,204,21,0.55)",
+                      color: "rgba(255,255,255,0.88)",
+                      borderRadius: 999,
+                    }}
+                  >
+                    Back to Midway
+                  </Button>
                 ) : null}
               </Stack>
             </Stack>
@@ -460,6 +447,8 @@ export default function WorkshopClient() {
                 answer={stored && typeof stored === "object" ? stored : null}
                 ticketsEarned={tickets}
                 onSave={(payload) => saveAnswerNoTicket(activeModule.id, payload)}
+                onBackToMidway={backToMidway}   // ✅ keep state
+                onLeave={leaveToMidway}         // ✅ reset + go to Midway
               />
             ) : (
               <StubAct title="Unknown Act" subtitle="This tent needs a renderer." />
@@ -494,14 +483,10 @@ export default function WorkshopClient() {
             </Stack>
           ) : null}
 
-          {/* SINGLE MODE: completion + return CTA */}
-          {isSingle ? (
+          {/* SINGLE MODE: completion + return CTA (HIDE on Prize Counter to prevent duplicates) */}
+          {isSingle && !isPrizeCounter ? (
             <Stack spacing={1.2} sx={{ mt: 4 }} alignItems="center">
-              {activeModule.type === "prize_counter" ? (
-                <Typography sx={{ opacity: 0.85 }}>
-                  Cash ’em in whenever you want — hit Leave to reset and start over.
-                </Typography>
-              ) : isComplete ? (
+              {isComplete ? (
                 <Typography sx={{ opacity: 0.85 }}>
                   {justWonTicket ? "Prize Ticket received." : "Ticket already stamped."} Want to hit
                   the Midway again?
@@ -513,7 +498,7 @@ export default function WorkshopClient() {
               )}
 
               <Button
-                onClick={isPrizeWall ? leaveAndReset : safeReturnToMidway}
+                onClick={backToMidway}
                 variant="contained"
                 sx={{
                   borderRadius: 999,
@@ -523,20 +508,11 @@ export default function WorkshopClient() {
                     "linear-gradient(90deg, rgba(225,29,72,0.95), rgba(250,204,21,0.95))",
                 }}
               >
-                {isPrizeWall ? "Leave" : "Back to Midway"}
+                Back to Midway
               </Button>
             </Stack>
           ) : null}
         </MotionBox>
-
-        {/* Optional fallback link (hide on Prize Wall) */}
-        {isSingle && !isPrizeWall ? (
-          <Box sx={{ mt: 2, textAlign: "center" }}>
-            <Button component={Link} href={RETURN_HREF} sx={{ opacity: 0.75 }}>
-              Return to Midway
-            </Button>
-          </Box>
-        ) : null}
       </Container>
     </Box>
   );

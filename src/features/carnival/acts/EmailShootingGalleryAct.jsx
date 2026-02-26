@@ -796,73 +796,72 @@ export default function EmailShootingGalleryAct({ module, answer, onComplete }) 
         ) : null}
       </AnimatePresence>
 
-      {/* Header */}
-      <Stack spacing={0.3}>
-        <Typography variant="h4">{module?.title ?? "Help Build an Email"}</Typography>
-        <Typography sx={{ opacity: 0.85 }}>
-          Hit the correct prompt snippets <b>in order</b>: Subject → Preheader → Hero → Primary CTA → Secondary → Module.
-        </Typography>
+      {/* Header (page shell already shows the title, so keep only the sub-header + controls) */}
+<Stack spacing={0.3}>
+  <Typography sx={{ opacity: 0.85 }}>
+    Hit the correct prompt snippets <b>in order</b>: Subject → Preheader → Hero → Primary CTA → Secondary → Module.
+  </Typography>
 
-        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} alignItems="center">
-          <Chip
-            label={`Progress: ${progress}/${requiredTotal}`}
-            sx={{
-              backgroundColor: "rgba(0,0,0,0.28)",
-              border: "1px dashed rgba(255,255,255,0.22)",
-            }}
-          />
-          <Chip
-            label={`Hits: ${hits}`}
-            sx={{
-              backgroundColor: "rgba(0,0,0,0.28)",
-              border: "1px dashed rgba(255,255,255,0.22)",
-            }}
-          />
-          <Chip
-            label={`Misses: ${misses}`}
-            sx={{
-              backgroundColor: "rgba(0,0,0,0.28)",
-              border: "1px dashed rgba(255,255,255,0.22)",
-            }}
-          />
-          <Chip
-            label={complete ? "Complete" : `Next: ${nextPart ? PART_LABEL[nextPart] : "—"}`}
-            sx={{
-              backgroundColor: "rgba(0,0,0,0.28)",
-              border: "1px dashed rgba(250,204,21,0.35)",
-            }}
-          />
+  <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} alignItems="center">
+    <Chip
+      label={`Progress: ${progress}/${requiredTotal}`}
+      sx={{
+        backgroundColor: "rgba(0,0,0,0.28)",
+        border: "1px dashed rgba(255,255,255,0.22)",
+      }}
+    />
+    <Chip
+      label={`Hits: ${hits}`}
+      sx={{
+        backgroundColor: "rgba(0,0,0,0.28)",
+        border: "1px dashed rgba(255,255,255,0.22)",
+      }}
+    />
+    <Chip
+      label={`Misses: ${misses}`}
+      sx={{
+        backgroundColor: "rgba(0,0,0,0.28)",
+        border: "1px dashed rgba(255,255,255,0.22)",
+      }}
+    />
+    <Chip
+      label={complete ? "Complete" : `Next: ${nextPart ? PART_LABEL[nextPart] : "—"}`}
+      sx={{
+        backgroundColor: "rgba(0,0,0,0.28)",
+        border: "1px dashed rgba(250,204,21,0.35)",
+      }}
+    />
 
-          <Button
-            type="button"
-            variant="outlined"
-            onClick={reset}
-            sx={{
-              borderRadius: 999,
-              borderStyle: "dashed",
-              borderColor: "rgba(225,29,72,0.55)",
-              color: "rgba(255,255,255,0.9)",
-            }}
-          >
-            Reset
-          </Button>
+    <Button
+      type="button"
+      variant="outlined"
+      onClick={reset}
+      sx={{
+        borderRadius: 999,
+        borderStyle: "dashed",
+        borderColor: "rgba(225,29,72,0.55)",
+        color: "rgba(255,255,255,0.9)",
+      }}
+    >
+      Reset
+    </Button>
 
-          <Button
-            type="button"
-            variant="contained"
-            onClick={fireAI}
-            disabled={!prompt}
-            sx={{
-              borderRadius: 999,
-              px: 2.2,
-              backgroundImage:
-                "linear-gradient(90deg, rgba(225,29,72,0.95), rgba(250,204,21,0.95))",
-            }}
-          >
-            FIRE
-          </Button>
-        </Stack>
-      </Stack>
+    <Button
+      type="button"
+      variant="contained"
+      onClick={fireAI}
+      disabled={!prompt}
+      sx={{
+        borderRadius: 999,
+        px: 2.2,
+        backgroundImage:
+          "linear-gradient(90deg, rgba(225,29,72,0.95), rgba(250,204,21,0.95))",
+      }}
+    >
+      FIRE
+    </Button>
+  </Stack>
+</Stack>
 
       {/* Feedback */}
       <AnimatePresence>

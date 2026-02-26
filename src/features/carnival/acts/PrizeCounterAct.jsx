@@ -75,6 +75,11 @@ export default function PrizeCounterAct({
   answer,
   ticketsEarned = 0,
   onSave,
+
+  // ✅ NEW: navigation controls
+  onBackToMidway,
+  onLeave,
+
   prizes = DEFAULT_PRIZES,
 }) {
   const reduce = useReducedMotion();
@@ -153,6 +158,20 @@ export default function PrizeCounterAct({
     setPendingPrize(null);
   };
 
+  // ✅ Back to Midway (keeps current state)
+  const goToMidway = React.useCallback(() => {
+    setConfirmOpen(false);
+    setPendingPrize(null);
+    onBackToMidway?.();
+  }, [onBackToMidway]);
+
+  // ✅ Leave (reset everything upstream + go to Midway)
+  const leaveNow = React.useCallback(() => {
+    setConfirmOpen(false);
+    setPendingPrize(null);
+    onLeave?.();
+  }, [onLeave]);
+
   const confirmClaim = () => {
     if (!pendingPrize) return;
     if (!canClaim(pendingPrize)) return;
@@ -228,12 +247,7 @@ export default function PrizeCounterAct({
           spacing={1.5}
         >
           <Stack spacing={0.5}>
-            <Typography variant="h5" fontWeight={950} sx={{ letterSpacing: 0.3 }}>
-              {module?.title ?? "Prize Counter"}
-            </Typography>
-            <Typography sx={{ opacity: 0.8 }}>
-              Trade your tickets for prizes. (Placeholder prizes for now—real inventory later.)
-            </Typography>
+            <Typography sx={{ opacity: 0.8 }}>Trade your tickets for prizes.</Typography>
           </Stack>
 
           <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
@@ -301,8 +315,39 @@ export default function PrizeCounterAct({
             </Typography>
           </Stack>
 
-          <Stack direction="row" spacing={1} justifyContent="flex-end">
+          <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ flexWrap: "wrap" }}>
             <Button
+              type="button"
+              onClick={goToMidway}
+              disabled={!onBackToMidway}
+              variant="outlined"
+              sx={{
+                borderRadius: 999,
+                borderStyle: "dashed",
+                borderColor: "rgba(250,204,21,0.45)",
+                color: "rgba(255,255,255,0.92)",
+              }}
+            >
+              Back to Midway
+            </Button>
+
+            <Button
+              type="button"
+              onClick={leaveNow}
+              disabled={!onLeave}
+              variant="contained"
+              sx={{
+                borderRadius: 999,
+                px: 2.2,
+                backgroundImage:
+                  "linear-gradient(90deg, rgba(225,29,72,0.95), rgba(250,204,21,0.95))",
+              }}
+            >
+              Leave
+            </Button>
+
+            <Button
+              type="button"
               onClick={resetClaims}
               variant="outlined"
               sx={{
@@ -369,7 +414,7 @@ export default function PrizeCounterAct({
                       {p.flavor}
                     </Typography>
 
-                    {/* Compact CTA block (no more drifting button) */}
+                    {/* Compact CTA block */}
                     <Stack spacing={1} sx={{ pt: 0.5 }}>
                       <Chip
                         label={

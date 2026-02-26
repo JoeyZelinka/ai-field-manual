@@ -511,71 +511,212 @@ export default function ParkMap() {
 
         <Container maxWidth="xl" sx={{ px: { xs: 2, md: 4 }, position: "relative", zIndex: 1 }}>
           {/* ====== HERO ====== */}
-          <MotionBox
-            variants={heroWrap}
+<MotionBox
+  variants={heroWrap}
+  sx={{
+    position: "relative",
+    borderRadius: 2,
+    p: { xs: 3, md: 4 },
+    mb: 3,
+    overflow: "hidden",
+    maxWidth: 1120,
+    mx: "auto",
+    border: "2px solid rgba(250,204,21,0.20)",
+    boxShadow: "0 18px 55px rgba(0,0,0,0.55)",
+    backgroundImage: `
+      radial-gradient(900px 380px at 25% 15%, rgba(250,204,21,0.18), transparent 60%),
+      radial-gradient(900px 380px at 80% 25%, rgba(225,29,72,0.16), transparent 55%),
+      linear-gradient(135deg, rgba(18,10,12,0.92), rgba(18,10,12,0.55))
+    `,
+  }}
+>
+  {/* ====== HERO marquee lights overlay ====== */}
+  <Box
+    aria-hidden
+    sx={{
+      position: "absolute",
+      inset: 0,
+      pointerEvents: "none",
+      zIndex: 0,
+    }}
+  >
+    {/* subtle dotted sheen (helps lights read on dark bg) */}
+    <Box
+      sx={{
+        position: "absolute",
+        inset: 0,
+        opacity: 0.18,
+        mixBlendMode: "overlay",
+        backgroundImage:
+          "radial-gradient(circle at 14px 14px, rgba(255,255,255,0.18) 0 1px, transparent 2px)",
+        backgroundSize: "24px 24px",
+      }}
+    />
+
+    {/* top bulbs */}
+    {!reduce ? (
+      <MotionBox
+        aria-hidden
+        animate={{ opacity: [0.75, 1, 0.82] }}
+        transition={{ duration: 2.6, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+        sx={{
+          position: "absolute",
+          left: -40,
+          right: -40,
+          top: 10,
+          height: 44,
+          opacity: 0.9,
+          mixBlendMode: "screen",
+          filter: "drop-shadow(0 0 14px rgba(250,204,21,0.28))",
+          backgroundImage: `
+            radial-gradient(circle at 22px 50%,
+              rgba(250,204,21,0.98) 0 4px,
+              rgba(250,204,21,0.20) 5px 11px,
+              transparent 12px
+            )
+          `,
+          backgroundSize: "44px 44px",
+          backgroundRepeat: "repeat-x",
+        }}
+      />
+    ) : (
+      <Box
+        sx={{
+          position: "absolute",
+          left: -40,
+          right: -40,
+          top: 10,
+          height: 44,
+          opacity: 0.95,
+          mixBlendMode: "screen",
+          filter: "drop-shadow(0 0 14px rgba(250,204,21,0.28))",
+          backgroundImage: `
+            radial-gradient(circle at 22px 50%,
+              rgba(250,204,21,0.98) 0 4px,
+              rgba(250,204,21,0.20) 5px 11px,
+              transparent 12px
+            )
+          `,
+          backgroundSize: "44px 44px",
+          backgroundRepeat: "repeat-x",
+        }}
+      />
+    )}
+
+    {/* bottom bulbs */}
+    {!reduce ? (
+      <MotionBox
+        aria-hidden
+        animate={{ opacity: [0.68, 0.95, 0.78] }}
+        transition={{
+          duration: 3.1,
+          repeat: Infinity,
+          repeatType: "mirror",
+          ease: "easeInOut",
+          delay: 0.35,
+        }}
+        sx={{
+          position: "absolute",
+          left: -40,
+          right: -40,
+          bottom: 10,
+          height: 44,
+          opacity: 0.88,
+          mixBlendMode: "screen",
+          filter: "drop-shadow(0 0 14px rgba(225,29,72,0.20))",
+          backgroundImage: `
+            radial-gradient(circle at 22px 50%,
+              rgba(225,29,72,0.90) 0 4px,
+              rgba(225,29,72,0.16) 5px 11px,
+              transparent 12px
+            )
+          `,
+          backgroundSize: "44px 44px",
+          backgroundRepeat: "repeat-x",
+        }}
+      />
+    ) : (
+      <Box
+        sx={{
+          position: "absolute",
+          left: -40,
+          right: -40,
+          bottom: 10,
+          height: 44,
+          opacity: 0.9,
+          mixBlendMode: "screen",
+          filter: "drop-shadow(0 0 14px rgba(225,29,72,0.20))",
+          backgroundImage: `
+            radial-gradient(circle at 22px 50%,
+              rgba(225,29,72,0.90) 0 4px,
+              rgba(225,29,72,0.16) 5px 11px,
+              transparent 12px
+            )
+          `,
+          backgroundSize: "44px 44px",
+          backgroundRepeat: "repeat-x",
+        }}
+      />
+    )}
+  </Box>
+
+  <Grid container spacing={2} alignItems="center" sx={{ position: "relative", zIndex: 1 }}>
+    <Grid size={{ xs: 12, md: 8 }}>
+      <MotionBox animate={floaty}>
+        <Stack spacing={1.2}>
+          {/* headline fix */}
+          <Typography
+            component="h1"
+            fontWeight={950}
             sx={{
-              position: "relative",
-              borderRadius: 1,
-              p: { xs: 3, md: 4 },
-              mb: 3,
-              overflow: "hidden",
-              maxWidth: 1120,
-              mx: "auto",
-              border: "2px solid rgba(250,204,21,0.20)",
-              boxShadow: "0 18px 55px rgba(0,0,0,0.55)",
-              backgroundImage: `
-                radial-gradient(900px 380px at 25% 15%, rgba(250,204,21,0.18), transparent 60%),
-                radial-gradient(900px 380px at 80% 25%, rgba(225,29,72,0.16), transparent 55%),
-                linear-gradient(135deg, rgba(18,10,12,0.92), rgba(18,10,12,0.55))
-              `,
+              lineHeight: { xs: 1.06, sm: 1.03, md: 1.0 },
+              fontSize: { xs: 34, sm: 46, md: 58 },
+              letterSpacing: { xs: 0.2, md: 0.6 },
+              textWrap: "balance",
             }}
           >
-            <Grid container spacing={2} alignItems="center" sx={{ position: "relative" }}>
-              <Grid size={{ xs: 12, md: 8 }}>
-                <MotionBox animate={floaty}>
-                  <Stack spacing={1.2}>
-                    <Typography variant="h2" fontWeight={950} sx={{ lineHeight: 1 }}>
-                      Grant & Henderson's Misfit Circus and Carnival
-                    </Typography>
-                    <Typography sx={{ opacity: 0.9, maxWidth: 720 }}>
-                      Step right up. Pick an act. Learn at your pace. Leave with better prompts,
-                      fewer hallucinations, and zero accidental data leaks.
-                    </Typography>
-                  </Stack>
-                </MotionBox>
-              </Grid>
+            Grant &amp; Henderson’s Misfit Circus and Carnival
+          </Typography>
 
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Stack spacing={1.2} alignItems={{ xs: "flex-start", md: "flex-end" }}>
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-                    <Chip
-                      label={`Acts cleared: ${completed}/${modules.length}`}
-                      sx={{
-                        backdropFilter: "blur(6px)",
-                        backgroundColor: "rgba(0,0,0,0.28)",
-                        border: "1px solid rgba(250,204,21,0.18)",
-                      }}
-                    />
-                    <Chip
-                      color="secondary"
-                      label={`Prize Tickets: ${tickets}`}
-                      sx={{
-                        backdropFilter: "blur(6px)",
-                        backgroundColor: "rgba(0,0,0,0.28)",
-                        border: "1px solid rgba(225,29,72,0.18)",
-                      }}
-                    />
-                  </Stack>
+          <Typography sx={{ opacity: 0.9, maxWidth: 720 }}>
+            Step right up. Pick an act. Learn at your pace. Leave with better prompts,
+            fewer hallucinations, and zero accidental data leaks.
+          </Typography>
+        </Stack>
+      </MotionBox>
+    </Grid>
 
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-                    <Button variant="outlined" onClick={resetProgress}>
-                      Reset tickets
-                    </Button>
-                  </Stack>
-                </Stack>
-              </Grid>
-            </Grid>
-          </MotionBox>
+    <Grid size={{ xs: 12, md: 4 }}>
+      <Stack spacing={1.2} alignItems={{ xs: "flex-start", md: "flex-end" }}>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+          <Chip
+            label={`Acts cleared: ${completed}/${modules.length}`}
+            sx={{
+              backdropFilter: "blur(6px)",
+              backgroundColor: "rgba(0,0,0,0.28)",
+              border: "1px solid rgba(250,204,21,0.18)",
+            }}
+          />
+          <Chip
+            color="secondary"
+            label={`Prize Tickets: ${tickets}`}
+            sx={{
+              backdropFilter: "blur(6px)",
+              backgroundColor: "rgba(0,0,0,0.28)",
+              border: "1px solid rgba(225,29,72,0.18)",
+            }}
+          />
+        </Stack>
+
+        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+          <Button variant="outlined" onClick={resetProgress}>
+            Reset tickets
+          </Button>
+        </Stack>
+      </Stack>
+    </Grid>
+  </Grid>
+</MotionBox>
 
           <Stack spacing={12}>
             {/* ====== FRONT GATE ====== */}
@@ -619,7 +760,7 @@ export default function ParkMap() {
 
             {/* ====== THE MIDWAY ====== */}
             <MotionBox variants={section}>
-              <Typography variant="h4" fontWeight={950} sx={{ mb: 2.5, textAlign: "center" }}>
+              <Typography id="midway" variant="h4" fontWeight={950} sx={{ mb: 2.5, textAlign: "center" }}>
                 The Midway
               </Typography>
 

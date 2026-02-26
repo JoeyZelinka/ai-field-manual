@@ -371,42 +371,59 @@ export default function BalloonDartAct({ module, answer, onComplete }) {
         ) : null}
       </AnimatePresence>
 
-      {/* Header */}
-      <Stack spacing={0.3}>
-        <Typography variant="h4">{module?.title ?? "What’s Safe to Put in a Prompt?"}</Typography>
-        <Typography sx={{ opacity: 0.85 }}>
-          SQL Slayers: patch the leaks. Hover balloons to read the prompt snippet.
-        </Typography>
+      {/* Header (title is SR-only; page shell can own the visible H4) */}
+<Stack spacing={0.3}>
+  <Typography
+    component="h2"
+    variant="h4"
+    sx={{
+      position: "absolute",
+      width: 1,
+      height: 1,
+      p: 0,
+      m: -1,
+      overflow: "hidden",
+      clip: "rect(0, 0, 0, 0)",
+      whiteSpace: "nowrap",
+      border: 0,
+    }}
+  >
+    {module?.title ?? "What’s Safe to Put in a Prompt?"}
+  </Typography>
 
-        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} alignItems="center">
-          <Chip
-            label={`Leaks patched: ${hits}/${requiredRisky || "—"}`}
-            sx={{
-              backgroundColor: "rgba(0,0,0,0.28)",
-              border: "1px dashed rgba(255,255,255,0.22)",
-            }}
-          />
-          <Chip
-            label={`False positives: ${misses}`}
-            sx={{
-              backgroundColor: "rgba(0,0,0,0.28)",
-              border: "1px dashed rgba(255,255,255,0.22)",
-            }}
-          />
-          <Button
-            variant="outlined"
-            onClick={reset}
-            sx={{
-              borderRadius: 999,
-              borderStyle: "dashed",
-              borderColor: "rgba(225,29,72,0.55)",
-              color: "rgba(255,255,255,0.9)",
-            }}
-          >
-            Reset
-          </Button>
-        </Stack>
-      </Stack>
+  <Typography sx={{ opacity: 0.85 }}>
+    SQL Slayers: patch the leaks. Hover balloons to read the prompt snippet.
+  </Typography>
+
+  <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} alignItems="center">
+    <Chip
+      label={`Leaks patched: ${hits}/${requiredRisky || "—"}`}
+      sx={{
+        backgroundColor: "rgba(0,0,0,0.28)",
+        border: "1px dashed rgba(255,255,255,0.22)",
+      }}
+    />
+    <Chip
+      label={`False positives: ${misses}`}
+      sx={{
+        backgroundColor: "rgba(0,0,0,0.28)",
+        border: "1px dashed rgba(255,255,255,0.22)",
+      }}
+    />
+    <Button
+      variant="outlined"
+      onClick={reset}
+      sx={{
+        borderRadius: 999,
+        borderStyle: "dashed",
+        borderColor: "rgba(225,29,72,0.55)",
+        color: "rgba(255,255,255,0.9)",
+      }}
+    >
+      Reset
+    </Button>
+  </Stack>
+</Stack>
 
       {/* Feedback */}
       <AnimatePresence>

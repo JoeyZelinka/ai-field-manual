@@ -12,9 +12,7 @@ const DUNKED_SHOTS = new Set(["cannonball", "full_send", "legendary"]);
 const DUNK_TANK = {
   intro: "Somebody on the Midway is running their mouth. Don’t debate—DUNK. Pick your shot.",
   preamble: [
-    "House rule: “If you use AI, you’re not a real ____.” is gatekeeping. Full stop.",
-    "Also: if you’re not coding in 0s and 1s, you’re using abstractions too. You don’t get to act like your hack is more noble than mine.",
-    "And yes—we’re an AI-forward company. We use it on purpose. It’s how a small team ships at scale.",
+    "",
   ],
   take: "“If you use AI, you’re not a real ____.”",
   shots: [
@@ -69,61 +67,44 @@ function DunkTankArt({ shotId }) {
   const reduce = useReducedMotion();
 
   const imgSrc = DUNKED_SHOTS.has(shotId)
-    ? "/dunk_tank_dunked.png"
-    : "/dunk_tank.png";
+    ? "/dunk_tank_dunked_wide.png"
+    : "/dunk_tank_wide.png";
 
   return (
-    <Box
+    <Stack
+      spacing={1}
       sx={{
         width: "100%",
-        maxWidth: 520,
+        maxWidth: 1100,     // ✅ let it breathe (tweak to taste)
         mx: "auto",
-        borderRadius: 3,
-        overflow: "hidden",
-        border: "2px dashed rgba(255,255,255,0.22)",
-        background:
-          "linear-gradient(180deg, rgba(250,204,21,0.10), rgba(225,29,72,0.08) 55%, rgba(0,0,0,0.25))",
-        position: "relative",
-        boxShadow: "0 16px 60px rgba(0,0,0,0.35)",
       }}
     >
-      {/* Full image render: keep portrait ratio, no cropping */}
-      <Box sx={{ position: "relative", width: "100%", aspectRatio: "1365 / 2048" }}>
-        <MotionBox
-          key={imgSrc}
-          initial={{ opacity: 0, scale: reduce ? 1 : 0.985 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={reduce ? { duration: 0 } : { duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          sx={{ position: "absolute", inset: 0 }}
-        >
-          <Image
-            src={imgSrc}
-            alt="Dunk tank"
-            fill
-            priority
-            sizes="(max-width: 600px) 92vw, 520px"
-            style={{ objectFit: "contain" }}
-          />
-        </MotionBox>
-      </Box>
-
-      <Box
-        sx={{
-          position: "absolute",
-          left: 14,
-          bottom: 12,
-          px: 1.2,
-          py: 0.6,
-          borderRadius: 999,
-          border: "1px dashed rgba(255,255,255,0.22)",
-          backgroundColor: "rgba(0,0,0,0.35)",
-        }}
+      <MotionBox
+        key={imgSrc}
+        initial={{ opacity: 0, scale: reduce ? 1 : 0.99 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={reduce ? { duration: 0 } : { duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        sx={{ width: "100%" }}
       >
-        <Typography sx={{ fontSize: 12, opacity: 0.9 }}>
-          Aim at the take. Ring the bell. Drop the ego.
-        </Typography>
-      </Box>
-    </Box>
+        {/* ✅ Natural aspect ratio, no container constraints */}
+        <Box
+          component="img"
+          src={imgSrc}
+          alt="Dunk tank"
+          loading="eager"
+          style={{
+            width: "100%",
+            height: "auto",
+            display: "block",
+          }}
+        />
+      </MotionBox>
+
+      {/* Optional: keep the little line, but NOT as an overlay */}
+      <Typography sx={{ fontSize: 12, opacity: 0.85, textAlign: "left" }}>
+        Aim at the take. Ring the bell. Drop the ego.
+      </Typography>
+    </Stack>
   );
 }
 
@@ -157,20 +138,12 @@ export default function DunkTankAct({ value, onPick }) {
         <Typography fontWeight={900} sx={{ mr: 1, opacity: 0.95 }}>
           The Take:
         </Typography>
-        <Typography sx={{ opacity: 0.9 }}>{DUNK_TANK.take}</Typography>
+        <Typography sx={{ opacity: 0.9 }}>"If you use AI, you’re not a real ____.” is gatekeeping. Full stop."</Typography>
       </Box>
 
       <DunkTankArt shotId={value} />
 
-      <Box sx={{ textAlign: "center" }}>
-        {shotObj ? (
-          <Typography sx={{ fontWeight: 950, letterSpacing: 1, textTransform: "uppercase", opacity: 0.95 }}>
-            {shotObj.shout}
-          </Typography>
-        ) : (
-          <Typography sx={{ opacity: 0.7, fontSize: 13 }}>Pick a shot to stamp this act.</Typography>
-        )}
-      </Box>
+      
 
       <Box
         sx={{
